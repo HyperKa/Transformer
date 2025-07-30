@@ -1,0 +1,4 @@
+public static method(){} |||LABEL|||0
+public word(String word){} |||LABEL|||0
+pulic public public public word(String word){} |||LABEL|||1
+private int number; |||LABEL|||0
