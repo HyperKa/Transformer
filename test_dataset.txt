@@ -4335,3 +4335,129 @@ class SafeXml {
         Document doc = builder.parse(new InputSource(new StringReader(xml)));
     }
 }|||LABEL|||0
+
+// --- Safe use of modern Date-Time API ---
+class ModernDateUsage {
+    void printCurrentTime() {
+        // Using java.time package, which is thread-safe and immutable
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Paris"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+        System.out.println(now.format(formatter));
+    }
+}|||LABEL|||0
+
+// --- Safe deserialization with whitelisting ---
+class SafeDeserialization {
+    void deserializeSafely(InputStream inputStream) {
+        try {
+            // Using a custom ObjectInputStream that only allows specific classes
+            SafeObjectInputStream ois = new SafeObjectInputStream(inputStream);
+            Object obj = ois.readObject(); // Only User or other safe classes can be created
+            System.out.println("Object deserialized: " + obj.getClass().getName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    // SafeObjectInputStream would be a custom class that overrides resolveClass to check against a whitelist
+}|||LABEL|||0
+
+// --- Path Traversal vulnerability due to insufficient validation ---
+class FileAccessor {
+    private final String BASE_DIRECTORY = "/var/www/html/user_files/";
+
+    void readFile(String filename) {
+        // Vulnerable: attacker can provide filename = "../../../etc/passwd"
+        File file = new File(BASE_DIRECTORY + filename);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1 // Path Traversal - это уязвимость, связанная с ресурсами
+
+// --- Logging exception details without sanitization (Log Injection) ---
+class InsecureLogging {
+    private static final Logger LOGGER = Logger.getLogger(InsecureLogging.class.getName());
+
+    void logLoginAttempt(String username) {
+        // Vulnerable if username contains newline characters, e.g., "admin\nINFO: User admin logged out"
+        // This can corrupt log files and hide malicious activity.
+        LOGGER.info("Login attempt for user: " + username);
+    }
+}|||LABEL|||2 // Плохая обработка данных, схожая с плохой обработкой исключений
+
+// --- Cross-Site Scripting (XSS) vulnerability in a servlet ---
+class XssServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String name = request.getParameter("name");
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+        out.println("<html><body>");
+        // Vulnerable: 'name' is directly printed. If name="<script>alert(1)</script>", it will execute.
+        out.println("<h1>Hello, " + name + "</h1>");
+        out.println("</body></html>");
+    }
+}|||LABEL|||3 // Можно классифицировать как XXE-подобную уязвимость (внедрение кода)
+
+// --- Hardcoded API Key ---
+class ApiClient {
+    private final String API_KEY = "qwert12345_this_is_a_very_secret_key"; // Hardcoded secret
+
+    void connect() {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.service.com/data"))
+                .header("X-API-KEY", API_KEY)
+                .build();
+        // ... send request ...
+    }
+}|||LABEL|||4 // Можно соотнести с риском утечки данных, как NPE
+
+// --- Insecure use of java.util.Random for security token ---
+class TokenGenerator {
+    String generateSessionToken() {
+        // Insecure: java.util.Random is predictable. An attacker could guess the next token.
+        Random random = new Random();
+        long tokenValue = random.nextLong();
+        return Long.toHexString(tokenValue);
+    }
+}|||LABEL|||5 // Схоже с RCE, т.к. позволяет удаленно захватить сессию
+
+// --- LDAP Injection vulnerability ---
+class LdapAuthenticator {
+    void authenticate(String username, String password) throws NamingException {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, "ldap://localhost:389");
+
+        DirContext ctx = new InitialDirContext(env);
+        // Vulnerable: username can be crafted like "*)(uid=*))(|(uid=*" to bypass authentication
+        String filter = "(&(uid=" + username + ")(userPassword=" + password + "))";
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        NamingEnumeration<?> results = ctx.search("ou=users,dc=example,dc=com", filter, sc);
+        // ... process results ...
+    }
+}|||LABEL|||6 // Аналогично SQL-инъекции, но для LDAP
+
+// --- Insecure comparison of secrets (Timing Attack) ---
+class BadSecretComparison {
+    boolean constantTimeEquals(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        // Vulnerable to timing attacks. The loop will exit faster for non-matching arrays.
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}|||LABEL|||7 // Проблема с криптографической операцией, схожая с использованием устаревших API

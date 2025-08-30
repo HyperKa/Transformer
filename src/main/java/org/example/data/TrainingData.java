@@ -153,7 +153,7 @@ public class TrainingData {
 
     public List<String> getCodeSnippets() { return this.codeSnippets; }
 
-    public List<String> tokenizeCode(String codeBlock) {
+    public static List<String> tokenizeCode(String codeBlock) {
         String noBlockComments = codeBlock.replaceAll("(?s)/\\*.*?\\*/", "");
         String noComments = noBlockComments.replaceAll("//.*", "");
         List<String> tokens = new ArrayList<>();

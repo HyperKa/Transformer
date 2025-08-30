@@ -1,8 +1,13 @@
 package org.example.data;
 import org.example.data.ConfigConstants;
+
+import java.io.*;
 import java.util.*;
 
-public class Vocabulary {
+public class Vocabulary implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final Map<String, Integer> wordToIndex;
     private final Map<Integer, String> indexToWord;
     private final int vocabSize;
@@ -11,7 +16,7 @@ public class Vocabulary {
     // ТЕСТОВАЯ:
     private int maxLength = ConfigConstants.MAX_LENGTH;
 
-    public Vocabulary(List<List<String>> allSequences) {
+    public Vocabulary(List<List<String>> wordSequences) {
         this.wordToIndex = new HashMap<>();
         this.indexToWord = new HashMap<>();
 
@@ -21,7 +26,7 @@ public class Vocabulary {
         addToken("[EOS]", 3);
 
         int counter = 4;
-        for (List<String> strings : allSequences) {
+        for (List<String> strings : wordSequences) {
             for (String token : strings) {
                 if (!wordToIndex.containsKey(token)) {  // Если словарь НЕ содержит ключ "токен"
                     addToken(token, counter++);
@@ -70,6 +75,31 @@ public class Vocabulary {
         return new PreparedData(tokenMatrix, attentionMask);
     }
 
+    public int[][] convertToIndexesForAnalysis(List<String> tokens) {
+        int[] tokenMatrix = new int[maxLength];
+        int[] attentionMask = new int[maxLength];
+        int[][] result = new int[2][maxLength];
+        // начало каждого примера в датасете со [SOS]
+        tokenMatrix[0] = 2;  // [SOS] - токен старта строки, не помощь -_-, важная часть обучения, именно по нему идет корректировка остальных параметров, строка [1, 64] в 46-ой строке TransformerModel
+        attentionMask[0] = 1;
+
+        int realSequenceLength = Math.min(tokens.size(), maxLength - 2);
+
+        for (int j = 0; j < realSequenceLength; j++) {
+            String token = tokens.get(j);
+            tokenMatrix[j + 1] = this.wordToIndex.getOrDefault(token, 1);  // [UNK] = 1, если слово не из словаря
+            attentionMask[j + 1] = 1;
+        }
+        System.out.println("Длина словаря для загруженного примера: " + realSequenceLength);
+        int lastIndex = realSequenceLength + 1;
+        tokenMatrix[lastIndex] = 3;  //  [EOS]
+        attentionMask[lastIndex] = 1;
+
+        result[0] = tokenMatrix;
+        result[1] = attentionMask;
+        return result;
+    }
+
 
     public static class PreparedData {
         private final int[][] tokenMatrix;
@@ -102,6 +132,24 @@ public class Vocabulary {
             }
         }
 
+    }
+
+
+    public void save(String path) throws IOException {
+        System.out.println("Сохранение данных словаря в файл: " + path);
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path))) {
+            oos.writeObject(this);
+        }
+        System.out.println("Словарь успешно сохранен.");
+    }
+
+    public static Vocabulary load(String filePath) throws IOException, ClassNotFoundException {
+        System.out.println("Загрузка словаря из файла: " + filePath);
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            Vocabulary vocab = (Vocabulary) ois.readObject();
+            System.out.println("Словарь успешно загружен.");
+            return vocab;
+        }
     }
 
     public int getDictionarySize() {
