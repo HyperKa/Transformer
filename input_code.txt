@@ -1,0 +1,16 @@
+// Файл: safe_sql.java
+import java.sql.*;
+
+class SafeDataAccess {
+    public void getUserData(Connection conn, String userId) {
+        try {
+            String query = "SELECT * FROM user_data WHERE id = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            // ... process results
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}

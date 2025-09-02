@@ -5,10 +5,11 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public class PositionalEncoding {  // ОН НЕ МЕНЯЕТСЯ, ПОСТОЯНЕН
+public class PositionalEncoding implements Serializable {  // ОН НЕ МЕНЯЕТСЯ, ПОСТОЯНЕН
     private RealMatrix peMatrix;
 
     public PositionalEncoding(int maxSeqLength, int embeddingDim) {  // Метод (конструктор для душнил, и функция для истинных джавистов), существующий чисто для генерации вектора позиций, nothing more

@@ -6,9 +6,10 @@ import org.example.ParameterContainer;
 
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class FeedForwardNetwork implements ParameterContainer {
+public class FeedForwardNetwork implements ParameterContainer, Serializable {
     private RealMatrix W1;  // Веса первого слоя
     private RealMatrix b1;  // смещение слоя 1
     private RealMatrix W2;  // Веса второго слоя

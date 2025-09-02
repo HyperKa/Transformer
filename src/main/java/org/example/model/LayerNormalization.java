@@ -6,9 +6,10 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.example.ParameterContainer;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class LayerNormalization implements ParameterContainer {
+public class LayerNormalization implements ParameterContainer, Serializable {
     int embeddingDim;
     double epsilon;
 

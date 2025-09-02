@@ -6,10 +6,11 @@ import org.example.ParameterContainer;
 
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.util.*;
 
 
-public class EmbeddingTable implements ParameterContainer {
+public class EmbeddingTable implements ParameterContainer, Serializable {
     private int size;  // размер словаря
     private int embeddingDim;
     private RealMatrix embeddingTable;

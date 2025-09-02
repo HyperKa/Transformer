@@ -3,12 +3,13 @@ package org.example.model;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.example.ParameterContainer;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EncoderBlock implements ParameterContainer {  // Структура нейронной сети именно тут должна обретать целостность...
+public class EncoderBlock implements ParameterContainer, Serializable {  // Структура нейронной сети именно тут должна обретать целостность...
     private MultiHeadAttention mhaObject;
     private LayerNormalization norm1;
     private FeedForwardNetwork network;

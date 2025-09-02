@@ -6,11 +6,12 @@ import org.example.ParameterContainer;
 
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-public class ClassificationHead  implements ParameterContainer {
+public class ClassificationHead  implements ParameterContainer, Serializable {
     private RealMatrix W;  // Веса
     private RealMatrix b;  // смещение
 

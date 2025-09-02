@@ -147,7 +147,7 @@ public class Vocabulary implements Serializable {
         System.out.println("Загрузка словаря из файла: " + filePath);
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
             Vocabulary vocab = (Vocabulary) ois.readObject();
-            System.out.println("Словарь успешно загружен.");
+            System.out.println("Словарь успешно загружен (vocabulary.ser) из корня проекта: " + filePath);
             return vocab;
         }
     }

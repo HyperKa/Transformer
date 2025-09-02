@@ -6,9 +6,10 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.example.ParameterContainer;
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class SelfAttention implements ParameterContainer {
+public class SelfAttention implements ParameterContainer, Serializable {
 
     private int embeddingDim;
     private int headDim;

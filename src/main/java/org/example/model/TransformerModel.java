@@ -6,12 +6,13 @@ import org.example.ParameterContainer;
 
 import org.example.data.ConfigConstants;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TransformerModel implements ParameterContainer {
+public class TransformerModel implements ParameterContainer, Serializable {
 
     private EmbeddingTable embeddingTable;
     private ArrayList<EncoderBlock> encoderBlocks;
@@ -98,6 +99,26 @@ public class TransformerModel implements ParameterContainer {
 
     public ArrayList<EncoderBlock> getEncoderBlocks() {
         return encoderBlocks;
+    }
+
+
+    public void save(String filePath) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(filePath);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+
+            oos.writeObject(this); // Сериализуем весь объект модели
+            System.out.println("Модель успешно сохранена в " + filePath);
+        }
+    }
+
+    public static TransformerModel load(String filePath) throws IOException, ClassNotFoundException {
+        try (FileInputStream fis = new FileInputStream(filePath);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+
+            TransformerModel model = (TransformerModel) ois.readObject();
+            System.out.println("Модель успешно загружена из (transformer_model.ser) корня проекта: " + filePath);
+            return model;
+        }
     }
 
 

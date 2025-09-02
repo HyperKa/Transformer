@@ -5,9 +5,10 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.example.ParameterContainer;
 import org.example.data.ConfigConstants;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class MultiHeadAttention implements ParameterContainer {
+public class MultiHeadAttention implements ParameterContainer, Serializable {
     private int embeddingDim;
     private int numHeads;
     ArrayList<SelfAttention> attentionHeads;
