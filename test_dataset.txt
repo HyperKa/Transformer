@@ -1,0 +1,5039 @@
+// data/java_code_dataset.txt
+
+// --- Пример: Безопасное использование try-with-resources ---
+public class SafeFileReader {
+    public void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Пример: Проверка null перед использованием ---
+public class NullSafeUtil {
+    public boolean isNameValid(User user) {
+        if (user == null || user.getName() == null) return false;
+        return !user.getName().isEmpty();
+    }
+
+    static class User {
+        String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Пример: Использование PreparedStatement для защиты от SQLi ---
+public class SafeDatabaseQuery {
+    public void getUser(Connection conn, String username) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                System.out.println(rs.getString("username"));
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Пример: Отключение DTD и внешних сущностей в XML парсере ---
+class SecureXMLParser {
+    void parseSecurely(String filePath) {
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            XMLEventReader reader = factory.createXMLEventReader(fis);
+            while (reader.hasNext()) {
+                XMLEvent event = reader.nextEvent();
+                if (event.isStartElement()) {
+                    StartElement start = event.asStartElement();
+                    System.out.println(start.getName().getLocalPart());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Пример: Использование Optional для избежания NPE ---
+public class UserService {
+    public Optional<User> findUserById(Long id) {
+        // Предположим, что здесь реальный поиск в БД
+        return Optional.ofNullable(null); // имитация
+    }
+
+    public void printUserName(Long id) {
+        Optional<User> userOpt = findUserById(id);
+        userOpt.map(User::getName).ifPresent(System.out::println);
+    }
+
+    static class User {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Пример: Утечка ресурса (нет finally или try-with-resources) ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+        // fis не закрывается!
+    }
+}|||LABEL|||1
+
+// --- Пример: Небезопасная обработка исключений (пустой catch) ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace(); // это нормально
+        }
+    }
+}|||LABEL|||1
+
+// --- Пример: Выполнение shell-команд без фильтрации ---
+class CommandInjection {
+    void runCommand(String userInput) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", userInput);
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1
+
+// --- Пример: XXE-уязвимость в XML парсере ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1
+
+// --- Пример: Прямое выполнение команд через Runtime.exec (RCE) ---
+class RemoteCodeExecution {
+    void executeCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command); // Опасно!
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1
+
+// --- Пример: Сравнение строк через == вместо .equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||1
+
+// --- Пример: Использование устаревшего Date API ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // подвержен ошибкам форматирования
+    }
+}|||LABEL|||1
+
+// --- Пример: Проблемы с сериализацией (Insecure Deserialization) ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1
+
+// --- Safe XML parser with DTD disabled ---
+class SafeXmlParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Resource leak in file handling ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- Empty catch block (bad exception handling) ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- XXE Vulnerability in XML parsing ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Null pointer exception risk ---
+class NpeExample {
+    void checkTitle(User user) {
+        if (user.name != null && !user.name.isEmpty()) {
+            System.out.println("Title is not empty");
+        } else {
+            System.out.println("Title is null or empty");
+        }
+    }
+
+    class User {
+        String name;
+    }
+}|||LABEL|||4
+
+// --- Remote Code Execution via Runtime.exec ---
+class RemoteCodeExecution {
+    void executeCommand(String userInput) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", userInput);
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- SQL Injection via string concatenation ---
+class SqlInjection {
+    void query(Connection conn, String userInput) {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE username = '" + userInput + "'");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated Date API ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы форматирования
+    }
+}|||LABEL|||7
+
+// --- Safe XML parser with DTD disabled ---
+class SecureXMLParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Resource leak in file handling ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- Empty catch block (bad exception handling) ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace(); // это нормально
+        }
+    }
+}|||LABEL|||2
+
+// --- XXE Vulnerability in XML parsing ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Null pointer exception risk ---
+class NpeExample {
+    void checkTitle(User user) {
+        if (user.name != null && !user.name.isEmpty()) {
+            System.out.println("Title is not empty");
+        } else {
+            System.out.println("Title is null or empty");
+        }
+    }
+
+    static class User {
+        String name;
+    }
+}|||LABEL|||4
+
+// --- Remote Code Execution via Runtime.exec ---
+class RemoteCodeExecution {
+    void executeCommand(String userInput) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", userInput);
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- SQL Injection via string concatenation ---
+class SqlInjection {
+    void query(Connection conn, String userInput) {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE username = '" + userInput + "'");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated Date API ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы форматирования
+    }
+}|||LABEL|||7
+
+// --- Insecure deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Comparing strings with == instead of .equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Good use of Optional to avoid NPE ---
+public class UserService {
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(null); // имитация
+    }
+
+    public void printUserName(Long id) {
+        Optional<User> userOpt = findUserById(id);
+        userOpt.map(User::getName).ifPresent(System.out::println);
+    }
+
+    static class User {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Using PreparedStatement for safe SQL query ---
+class SafeDatabaseQuery {
+    public void getUser(Connection conn, String username) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                System.out.println(rs.getString("username"));
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Unsafe XML parser allowing external entities ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- No try-with-resources leads to resource leak ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- NullPointerException possible ---
+class NpeExample {
+    void logName(User user) {
+        if (user.getName().length() > 0) {
+            System.out.println(user.getName());
+        } else {
+            System.out.println("Name is empty");
+        }
+    }
+
+    static class User {
+        String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||4
+
+// --- Running shell commands directly from user input ---
+class CommandInjection {
+    void runCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command); // Опасно!
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Comparing Strings using == instead of equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) {
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using old Date API which can cause issues ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // устаревший метод
+    }
+}|||LABEL|||7
+
+// --- Empty catch block without logging or rethrowing ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+
+// --- Hardcoded credentials in source code ---
+class HardcodedCredentials {
+    boolean authenticate(String inputPassword) {
+        String password = "admin123"; // Hardcoded password
+        return password.equals(inputPassword);
+    }
+}|||LABEL|||5
+
+// --- Unsafe SQL concatenation ---
+class SqlInjectionVulnerable {
+    public void getUser(Connection conn, String username) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = '" + username + "'";
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+        while (rs.next()) {
+            System.out.println(rs.getString("username"));
+        }
+    }
+}|||LABEL|||6
+
+// --- File not closed properly ---
+class FileResourceLeak {
+    public void readFile(String path) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(path));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+        // Forgot to close reader
+    }
+}|||LABEL|||1
+
+// --- Safe XML parser configuration ---
+class XXESafeParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing XML: " + e.getMessage());
+        }
+    }
+}|||LABEL|||0
+
+// --- Potential NPE with array length check ---
+class ArrayNpeExample {
+    void printArrayLength(int[] array) {
+        if (array.length > 0) { // Potential NPE
+            System.out.println("Array length: " + array.length);
+        }
+    }
+}|||LABEL|||4
+
+// --- Using deprecated Thread methods ---
+class DeprecatedThreadApi {
+    void controlThread(Thread thread) {
+        thread.stop(); // Deprecated method
+        thread.suspend(); // Deprecated method
+    }
+}|||LABEL|||7
+
+// --- Silent exception swallowing ---
+class SilentExceptionSwallowing {
+    void loadConfig(String path) {
+        try {
+            Properties props = new Properties();
+            props.load(new FileInputStream(path));
+        } catch (IOException e) {
+            // Completely silent catch block
+        }
+    }
+}|||LABEL|||2
+
+// --- Safe command execution with input validation ---
+class SafeCommandExecution {
+    void listDirectory(String dir) {
+        if (!dir.matches("[a-zA-Z0-9./_-]+")) {
+            throw new IllegalArgumentException("Invalid directory");
+        }
+        try {
+            Process process = new ProcessBuilder("ls", "-l", dir).start();
+            // ... process output
+        } catch (IOException e) {
+            System.err.println("Error executing command: " + e.getMessage());
+        }
+    }
+}|||LABEL|||0
+
+// --- Hardcoded credentials in source code ---
+class HardcodedCredentials {
+    boolean authenticate(String inputPassword) {
+        String password = "admin123"; // Hardcoded password
+        return password.equals(inputPassword);
+    }
+}|||LABEL|||5
+
+// --- Unsafe SQL concatenation ---
+class SqlInjectionVulnerable {
+    public void getUser(Connection conn, String username) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = '" + username + "'";
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+        while (rs.next()) {
+            System.out.println(rs.getString("username"));
+        }
+    }
+}|||LABEL|||6
+
+// --- File not closed properly ---
+class FileResourceLeak {
+    public void readFile(String path) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(path));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+        // Forgot to close reader
+    }
+}|||LABEL|||1
+
+// --- Safe XML parser configuration ---
+class XXESafeParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing XML: " + e.getMessage());
+        }
+    }
+}|||LABEL|||0
+
+// --- Potential NPE with array length check ---
+class ArrayNpeExample {
+    void printArrayLength(int[] array) {
+        if (array.length > 0) { // Potential NPE
+            System.out.println("Array length: " + array.length);
+        }
+    }
+}|||LABEL|||4
+
+// --- Using deprecated Thread methods ---
+class DeprecatedThreadApi {
+    void controlThread(Thread thread) {
+        thread.stop(); // Deprecated method
+        thread.suspend(); // Deprecated method
+    }
+}|||LABEL|||7
+
+// --- Silent exception swallowing ---
+class SilentExceptionSwallowing {
+    void loadConfig(String path) {
+        try {
+            Properties props = new Properties();
+            props.load(new FileInputStream(path));
+        } catch (IOException e) {
+            // Completely silent catch block
+        }
+    }
+}|||LABEL|||2
+
+// --- Safe command execution with input validation ---
+class SafeCommandExecution {
+    void listDirectory(String dir) {
+        if (!dir.matches("[a-zA-Z0-9./_-]+")) {
+            throw new IllegalArgumentException("Invalid directory");
+        }
+        try {
+            Process process = new ProcessBuilder("ls", "-l", dir).start();
+            // ... process output
+        } catch (IOException e) {
+            System.err.println("Error executing command: " + e.getMessage());
+        }
+    }
+}|||LABEL|||0
+
+
+// --- Safe XML parser with DTD disabled ---
+class SecureXMLParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Resource leak in file handling ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- Empty catch block (bad exception handling) ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace(); // это нормально
+        }
+    }
+}|||LABEL|||2
+
+// --- XXE Vulnerability in XML parsing ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Null pointer exception risk ---
+class NpeExample {
+    void checkTitle(User user) {
+        if (user.name != null && !user.name.isEmpty()) {
+            System.out.println("Title is not empty");
+        } else {
+            System.out.println("Title is null or empty");
+        }
+    }
+
+    static class User {
+        String name;
+    }
+}|||LABEL|||4
+
+// --- Remote Code Execution via Runtime.exec ---
+class RemoteCodeExecution {
+    void executeCommand(String userInput) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", userInput);
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- SQL Injection via string concatenation ---
+class SqlInjection {
+    void query(Connection conn, String userInput) {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE username = '" + userInput + "'");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated Date API ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы форматирования
+    }
+}|||LABEL|||7
+
+// --- Insecure deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Comparing strings with == instead of .equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Good use of Optional to avoid NPE ---
+public class UserService {
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(null); // имитация
+    }
+
+    public void printUserName(Long id) {
+        Optional<User> userOpt = findUserById(id);
+        userOpt.map(User::getName).ifPresent(System.out::println);
+    }
+
+    static class User {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Using PreparedStatement for safe SQL query ---
+class SafeDatabaseQuery {
+    public void getUser(Connection conn, String username) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                System.out.println(rs.getString("username"));
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Unsafe XML parser allowing external entities ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- No try-with-resources leads to resource leak ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- NullPointerException possible ---
+class NpeExample {
+    void logName(User user) {
+        if (user.getName().length() > 0) {
+            System.out.println(user.getName());
+        } else {
+            System.out.println("Name is empty");
+        }
+    }
+
+    static class User {
+        String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||4
+
+// --- Running shell commands directly from user input ---
+class CommandInjection {
+    void runCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command); // Опасно!
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Comparing Strings using == instead of equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) {
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using old Date API which can cause issues ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // устаревший метод
+    }
+}|||LABEL|||7
+
+// --- Empty catch block without logging or rethrowing ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Safe use of try-with-resources ---
+class SafeFileReader {
+    public void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- File reading without closing stream ---
+class ResourceLeakExample {
+    public void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- Deserialization vulnerability ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using BeanUtils.copyProperties safely ---
+class UserConvert {
+    public static UserDTO toDTO(User user) {
+        UserDTO dto = new UserDTO();
+        org.springframework.beans.BeanUtils.copyProperties(dto, user);
+        return dto;
+    }
+}|||LABEL|||0
+
+// --- Direct use of user input in system command ---
+class RemoteCodeExecution {
+    void executeCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command); // Опасно!
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using String.equals() correctly ---
+class SafeStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if ("secret".equals(input)) { // безопаснее
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using try-catch without finally may lead to leaks ---
+class ResourceLeakExample {
+    void openStream(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1
+
+// --- Using old Date API which can cause issues ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы форматирования
+    }
+}|||LABEL|||7
+
+// --- Not checking for null before accessing object fields ---
+class NpeExample {
+    void logName(User user) {
+        if (user.getName().length() > 0) {
+            System.out.println(user.getName());
+        } else {
+            System.out.println("Name is empty");
+        }
+    }
+
+    static class User {
+        String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||4
+
+// --- Using Optional to prevent NPE ---
+public class UserService {
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(null); // имитация
+    }
+
+    public void printUserName(Long id) {
+        Optional<User> userOpt = findUserById(id);
+        userOpt.map(User::getName).ifPresent(System.out::println);
+    }
+
+    static class User {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Using prepared statement prevents SQL injection ---
+class SafeDatabaseQuery {
+    void query(Connection conn, String userInput) {
+        try {
+            String query = "SELECT * FROM users WHERE username = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, userInput);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    System.out.println(rs.getString("username"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Missing try-with-resources may cause leaks ---
+class ResourceLeakExample {
+    void readFileUnsafe(String path) throws Exception {
+        FileInputStream fis = new FileInputStream(path);
+        XMLEventReader xmlEventReader = XMLInputFactory.newInstance().createXMLEventReader(fis);
+        while (xmlEventReader.hasNext()) {
+            System.out.println(xmlEventReader.nextEvent());
+        }
+    }
+}|||LABEL|||1
+
+// --- Empty catch block without logging ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace(); // это нормально
+        }
+    }
+}|||LABEL|||2
+
+// --- XXE Vulnerability in XML parsing ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Direct execution of user input ---
+class RemoteCodeExecution {
+    void executeCommand(String userInput) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", userInput);
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using equals() instead of == for string comparison ---
+class SafeStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if ("secret".equals(input)) {
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using deprecated Date API ---
+class OldDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы форматирования
+    }
+}|||LABEL|||7
+
+// --- Comparing strings with == instead of .equals() ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Safe XML parser with DTD disabled ---
+class SafeXmlParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Using try-with-resources for automatic cleanup ---
+class SafeFileReader {
+    public void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Checking null before accessing object ---
+class NullSafeUtil {
+    public boolean isNameValid(User user) {
+        if (user == null || user.getName() == null) return false;
+        return !user.getName().isEmpty();
+    }
+
+    static class User {
+        String name;
+
+        public String getName() {
+            return name;
+        }
+    }
+}|||LABEL|||0
+
+// --- Using StringBuilder for string concatenation ---
+class EfficientStringConcatenation {
+    String buildLog(String[] logs) {
+        StringBuilder sb = new StringBuilder();
+        for (String log : logs) {
+            sb.append(log).append("\n");
+        }
+        return sb.toString();
+    }
+}|||LABEL|||0
+
+// --- Using Comparator.nullsFirst/Last for safety ---
+class SafeComparator {
+    void sort(List<String> list) {
+        Collections.sort(list, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+    }
+}|||LABEL|||0
+
+// --- Using Collections.synchronizedList for thread safety ---
+class ThreadSafeList {
+    List<String> sharedList = Collections.synchronizedList(new ArrayList<>());
+    void add(String item) {
+        sharedList.add(item);
+    }
+}|||LABEL|||0
+
+// --- Proper use of equals and hashCode ---
+class User implements Serializable {
+    private String name;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(name, user.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+}|||LABEL|||0
+
+// --- Using regex pattern matching safely ---
+class SafeRegexUtil {
+    void validateEmail(String email) {
+        if (Pattern.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$", email)) {
+            System.out.println("Valid email");
+        } else {
+            System.out.println("Invalid email");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using Stream API safely ---
+class SafeStreamProcessing {
+    void filterUsers(List<User> users) {
+        List<String> activeNames = users.stream()
+            .filter(u -> u.isActive())
+            .map(User::getName)
+            .collect(Collectors.toList());
+        System.out.println(activeNames);
+    }
+
+    static class User {
+        boolean active;
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public String getName() {
+            return "JohnDoe";
+        }
+    }
+}|||LABEL|||0
+
+// --- Insecure use of Runtime.exec() ---
+class RemoteCodeExecution {
+    void executeCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command); // Опасно!
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Multiple nested try-catch blocks without proper error handling ---
+class PoorErrorHandling {
+    void loadConfig(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            Properties props = new Properties();
+            props.load(fis);
+        } catch (Exception e) {
+            // Just logging, but no action
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Comparing objects without .equals() ---
+class BadObjectComparison {
+    void compare(User a, User b) {
+        if (a == b) {
+            System.out.println("Same instance");
+        } else {
+            System.out.println("Different instances");
+        }
+    }
+
+    static class User {}
+}|||LABEL|||6
+
+// --- Using deprecated methods like java.util.Date ---
+class DeprecatedDateAPI {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        System.out.println(now.toString());
+    }
+}|||LABEL|||7
+
+// --- Multiple catch blocks with same handler ---
+class MultiCatchBlock {
+    void process(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Using lambda expressions safely ---
+class SafeLambdaUsage {
+    void process(List<String> items) {
+        items.forEach(item -> System.out.println("Item: " + item));
+    }
+}|||LABEL|||0
+
+// --- Using synchronized for thread safety ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using Spring's BeanUtils.copyProperties ---
+class UserConvert {
+    void convert(User source, User target) {
+        BeanUtils.copyProperties(target, source);
+    }
+
+    static class User {
+        String name;
+    }
+}|||LABEL|||0
+
+// --- Reading XML without secure settings ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // уязвимость
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // уязвимость
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using Optional to avoid NPE ---
+class SafeOptionalUse {
+    void printName(Optional<String> name) {
+        name.ifPresent(System.out::println);
+    }
+}|||LABEL|||0
+
+// --- Using try-with-resources properly ---
+class SafeFileReader {
+    public void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using prepared statement safely ---
+class SafeSQLQuery {
+    void query(Connection conn, String userInput) {
+        try {
+            String query = "SELECT * FROM users WHERE username = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, userInput);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    System.out.println(rs.getString("username"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Using enum for type-safe operations ---
+enum Status {
+    PENDING, APPROVED, REJECTED
+}
+class SafeEnumUse {
+    void checkStatus(Status status) {
+        switch (status) {
+            case PENDING:
+                System.out.println("Pending...");
+                break;
+            case APPROVED:
+                System.out.println("Approved.");
+                break;
+            default:
+                System.out.println("Unknown status.");
+                break;
+        }
+    }
+}|||LABEL|||0
+
+// --- Using Optional.get() without check ---
+class BadOptionalUsage {
+    void printName(Optional<String> name) {
+        System.out.println(name.get()); // потенциальный NPE
+    }
+}|||LABEL|||4
+
+// --- Using Reflection without validation ---
+class ReflectionVulnerability {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using unsafe deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using String.intern() safely ---
+class InternedString {
+    void compareStrings(String a, String b) {
+        if (a.intern() == b.intern()) {
+            System.out.println("Equal");
+        } else {
+            System.out.println("Not equal");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using BigDecimal for financial calculations ---
+class FinancialCalculator {
+    void calculate(double a, double b) {
+        BigDecimal result = new BigDecimal(Double.toString(a))
+            .add(new BigDecimal(Double.toString(b)));
+        System.out.println("Result: " + result);
+    }
+}|||LABEL|||0
+
+// --- Using Lambda expression in multi-threaded context ---
+class ParallelStreamSafety {
+    void process(List<String> data) {
+        data.parallelStream().forEach(System.out::println);
+    }
+}|||LABEL|||0
+
+// --- Using non-reentrant locks in multi-threaded code ---
+class NonReentrantLock {
+    private final Lock lock = new ReentrantLock();
+
+    void accessResource() {
+        lock.lock();
+        try {
+            System.out.println("Accessing resource...");
+        } finally {
+            lock.unlock();
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash map that allows garbage collection ---
+class WeakHashMapExample {
+    void cacheData() {
+        Map<Key, Value> cache = new WeakHashMap<>();
+        Key key = new Key();
+        cache.put(key, new Value());
+        key = null; // Garbage collected
+    }
+
+    static class Key {}
+    static class Value {}
+}|||LABEL|||0
+
+// --- Using unchecked cast which may throw CCE ---
+class BadTypeCast {
+    <T> void cast(Object obj) {
+        T value = (T) obj; // потенциальный ClassCastException
+        System.out.println(value);
+    }
+}|||LABEL|||4
+
+// --- Using raw types in generic collections ---
+class RawTypeWarning {
+    void process() {
+        List list = new ArrayList();
+        list.add("string");
+        list.add(123); // потенциальная проблема типизации
+    }
+}|||LABEL|||6
+
+// --- Using deprecated method show() on Component ---
+class AWTComponentDeprecation {
+    void showWindow(JFrame frame) {
+        frame.show(); // устарело
+    }
+}|||LABEL|||7
+
+// --- Using old IO classes instead of NIO ---
+class LegacyIOUsage {
+    void read(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||7
+
+// --- Using URL.openConnection() without timeouts ---
+class InsecureURLConnection {
+    void fetch(String urlStr) {
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            System.out.println(conn.getResponseCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using legacy security algorithms (MD5) ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using multiple inheritance via interfaces safely ---
+interface Logger {
+    void log(String msg);
+}
+interface Validator {
+    boolean isValid();
+}
+class SafeMultipleInheritance implements Logger, Validator {
+    @Override
+    public void log(String msg) {
+        System.out.println(msg);
+    }
+
+    @Override
+    public boolean isValid() {
+        return true;
+    }
+}|||LABEL|||0
+
+// --- Using reflection to call private methods ---
+class PrivateReflectionUse {
+    void accessPrivateMethod() {
+        try {
+            Class<?> clazz = Class.forName("com.example.MyClass");
+            Method method = clazz.getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(clazz.getDeclaredConstructor().newInstance());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using base64 encoding safely ---
+class Base64Encoder {
+    void encode(String input) {
+        String encoded = Base64.getEncoder().encodeToString(input.getBytes());
+        System.out.println(encoded);
+    }
+}|||LABEL|||0
+
+// --- Using non-generic collections (raw type) ---
+class RawCollection {
+    void addItems() {
+        List list = new ArrayList();
+        list.add("item1");
+        list.add(123); // нет проверки типов
+    }
+}|||LABEL|||6
+
+// --- Using deprecated method show() on Window ---
+class AWTWindowDeprecation {
+    void show(Window window) {
+        window.show(); // устарело
+    }
+}|||LABEL|||7
+
+// --- Using insecure deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using String.equals() correctly ---
+class SafeStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if ("secret".equals(input)) {
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using synchronized method for thread-safety ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using legacy date formatting ---
+class LegacyDateFormat {
+    void printDate(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        System.out.println(sdf.format(date)); // устаревший метод
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using reflection without proper validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.newInstance(); // устарело и небезопасно
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using unchecked cast which may throw CCE ---
+class BadTypeCast {
+    <T> void cast(Object obj) {
+        T value = (T) obj; // потенциальный ClassCastException
+        System.out.println(value);
+    }
+}|||LABEL|||4
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old IO APIs instead of NIO ---
+class LegacyIORead {
+    void read(String path) {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||0
+
+// --- Using MD5 hashing (insecure) ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using multiple exceptions in one catch block ---
+class MultiCatchBlock {
+    void process(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Using Pattern.compile() for repeated matching ---
+class SafeRegex {
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$");
+
+    void validate(String email) {
+        Matcher matcher = EMAIL_PATTERN.matcher(email);
+        if (matcher.find()) {
+            System.out.println("Valid email");
+        } else {
+            System.out.println("Invalid email");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using legacy date formatting ---
+class LegacyDateFormatter {
+    void printDate(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        System.out.println(sdf.format(date)); // устаревший метод
+    }
+}|||LABEL|||7
+
+// --- Using multiple interface implementations safely ---
+interface Reader {
+    void read();
+}
+interface Writer {
+    void write();
+}
+class SafeReadWrite implements Reader, Writer {
+    @Override
+    public void read() {
+        System.out.println("Reading...");
+    }
+
+    @Override
+    public void write() {
+        System.out.println("Writing...");
+    }
+}|||LABEL|||0
+
+// --- Using synchronized block for partial locking ---
+class PartialThreadSafety {
+    private final Object lock = new Object();
+
+    void criticalSection() {
+        synchronized (lock) {
+            System.out.println("In critical section...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to invoke methods ---
+class ReflectiveInvocation {
+    void callMethod(String className, String methodName) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Method method = clazz.getMethod(methodName);
+            method.invoke(clazz.getDeclaredConstructor().newInstance());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources properly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using equals() and hashCode() properly ---
+class User {
+    String name;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(name, user.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+}|||LABEL|||0
+
+// --- Using try-finally without try-with-resources ---
+class ManualResourceManagement {
+    void read(String path) {
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using unsafe XML parser (no protection against XXE) ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // уязвимость
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // уязвимость
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using unchecked cast which may throw CCE ---
+class BadTypeCast {
+    <T> void cast(Object obj) {
+        T value = (T) obj; // потенциальный ClassCastException
+        System.out.println(value);
+    }
+}|||LABEL|||4
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API which is not thread-safe ---
+class LegacyDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable reflection to instantiate objects ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using base64 encoding safely ---
+class Base64Encoder {
+    void encode(String input) {
+        String encoded = Base64.getEncoder().encodeToString(input.getBytes());
+        System.out.println(encoded);
+    }
+}|||LABEL|||0
+
+// --- Using non-generic collections (raw type) ---
+class RawCollectionUsage {
+    void addItems() {
+        List list = new ArrayList();
+        list.add("item1");
+        list.add(123); // нет типобезопасности
+    }
+}|||LABEL|||6
+
+// --- Using old IO APIs instead of NIO ---
+class LegacyIOUsage {
+    void read(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||7
+
+// --- Using unsafe deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using String.intern() safely ---
+class SafeInternUsage {
+    void compare(String a, String b) {
+        if (a.intern() == b.intern()) {
+            System.out.println("Equal");
+        } else {
+            System.out.println("Not equal");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using BigDecimal for precise calculations ---
+class FinancialCalculator {
+    void calculate(double a, double b) {
+        BigDecimal result = new BigDecimal(Double.toString(a)).add(new BigDecimal(Double.toString(b)));
+        System.out.println("Result: " + result);
+    }
+}|||LABEL|||0
+
+// --- Using parallel streams safely ---
+class SafeParallelStream {
+    void process(List<String> data) {
+        data.parallelStream().forEach(System.out::println);
+    }
+}|||LABEL|||0
+
+// --- Using non-reentrant locks ---
+class NonReentrantLock {
+    private final Lock lock = new ReentrantLock();
+
+    void accessResource() {
+        lock.lock();
+        try {
+            System.out.println("Accessing resource...");
+        } finally {
+            lock.unlock();
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT components ---
+class AWTComponentDeprecation {
+    void showFrame(JFrame frame) {
+        frame.show(); // устарело
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using multiple exceptions in single try-catch ---
+class SingleTryCatch {
+    void process(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Using Optional.isPresent() safely ---
+class SafeOptionalCheck {
+    void printName(Optional<String> name) {
+        if (name.isPresent()) {
+            System.out.println(name.get());
+        } else {
+            System.out.println("No name");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using try-catch-finally manually ---
+class ManualResourceClosing {
+    void read(String path) {
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using unsafe XPath evaluation ---
+class XPathVulnerability {
+    void evaluate(String expr) {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = dbf.newDocumentBuilder();
+            Document doc = builder.parse(new InputSource(expr));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using unsafe XML parsing without DTD protection ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using multiple catch blocks ---
+class MultiCatchBlock {
+    void process(String path) {
+        try {
+            FileInputStream fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Using equals() and hashCode() safely ---
+class User {
+    String name;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(name, user.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+}|||LABEL|||0
+
+// --- Using manual resource management ---
+class ManualResourceManagement {
+    void read(String path) {
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(path);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using outdated crypto algorithm (DES) ---
+class WeakCrypto {
+    void encrypt(byte[] data) {
+        try {
+            Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding"); // слабый алгоритм
+            cipher.init(Cipher.ENCRYPT_MODE, generateKey());
+            byte[] encrypted = cipher.doFinal(data);
+            System.out.println(Arrays.toString(encrypted));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Key generateKey() {
+        return new SecretKeySpec("12345678".getBytes(), "DES");
+    }
+}|||LABEL|||3
+
+// --- Using reflection to modify private fields ---
+class UnsafeFieldModification {
+    void setPrivateValue(Object obj, String fieldName, Object value) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(obj, value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API (java.util.Date) ---
+class LegacyDateUsage {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        System.out.println(now); // устаревший метод
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-catch without proper recovery ---
+class BadErrorHandling {
+    void process(String filename) {
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        } catch (FileNotFoundException ex) {
+            // Ничего не делаем — плохая практика
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||2
+
+// --- Using == for object comparison ---
+class BadObjectComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructors ---
+class DeprecatedConstructorUsage {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to access private methods ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for object comparison ---
+class BadObjectComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устарело
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1 {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+    public synchronized void increment() {
+        count++;
+    }
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+    public synchronized void increment() {
+        count++;
+    }
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using raw types in generic methods ---
+class RawTypeWarning {
+    void process(List list) {
+        list.add("string");
+        list.add(123); // нет контроля типов
+    }
+}|||LABEL|||6
+
+// --- Using old Date API ---
+class LegacyDateFormatter {
+    void printCurrentTime() {
+        Date now = new Date(); // устарело
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(now)); // потенциальные проблемы многопоточности
+    }
+}|||LABEL|||7
+
+// --- Using vulnerable deserialization ---
+class VulnerableDeserialization {
+    void deserialize(InputStream inputStream) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(inputStream);
+            Object obj = ois.readObject();
+            System.out.println(obj.toString()); // угроза десериализации
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using == for string comparison ---
+class BadStringComparison {
+    void checkPassword(String input) {
+        String correctPass = "secret";
+        if (input == correctPass) { // потенциальная ошибка
+            System.out.println("Access granted");
+        } else {
+            System.out.println("Access denied");
+        }
+    }
+}|||LABEL|||6
+
+// --- Using deprecated constructor ---
+class LegacyFileCreation {
+    void createTempFile() {
+        File file = new File("temp.tmp"); // устаревший конструктор
+        System.out.println(file.getAbsolutePath());
+    }
+}|||LABEL|||7
+
+// --- Using unsafe XML parser ---
+class XXEVulnerableParser {
+    void parse(String filePath) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true); // опасно
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, true); // тоже небезопасно
+            XMLEventReader reader = factory.createXMLEventReader(new FileInputStream(filePath));
+            while (reader.hasNext()) {
+                System.out.println(reader.nextEvent());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using synchronized block safely ---
+class ThreadSafeBlock {
+    private final Object lock = new Object();
+    void criticalOperation() {
+        synchronized (lock) {
+            System.out.println("Executing safely...");
+        }
+    }
+}|||LABEL|||0
+
+// --- Using reflection to modify private fields ---
+class PrivateReflectionUse {
+    void invokePrivateMethod(Object obj) {
+        try {
+            Method method = obj.getClass().getDeclaredMethod("privateMethod");
+            method.setAccessible(true);
+            method.invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+// --- Using try-with-resources correctly ---
+class SafeFileReader {
+    void read(String path) throws IOException {
+        try (FileInputStream fis = new FileInputStream(path)) {
+            int data;
+            while ((data = fis.read()) != -1) {
+                System.out.print((char) data);
+            }
+        }
+    }
+}|||LABEL|||0
+
+// --- Using weak hash function ---
+class WeakHashing {
+    void hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1"); // слабый алгоритм
+            byte[] hash = md.digest(input.getBytes());
+            System.out.println(Arrays.toString(hash));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||3
+
+// --- Using old AWT API ---
+class AWTWindowExample {
+    void createWindow() {
+        Frame frame = new Frame("Test");
+        frame.setSize(300, 200);
+        frame.setVisible(true);
+    }
+}|||LABEL|||7
+
+// --- Using synchronized method safely ---
+class ThreadSafeCounter {
+    private int count = 0;
+    public synchronized void increment() {
+        count++;
+    }
+    public synchronized int getCount() {
+        return count;
+    }
+}|||LABEL|||0
+
+// --- Using reflection without validation ---
+class UnsafeReflection {
+    void createInstance(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getDeclaredConstructor().newInstance(); // уязвимость
+            System.out.println(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||5
+
+
+
+// Открытие файла без закрытия
+class FileLeak {
+    void readFile(String path) throws IOException {
+        FileReader reader = new FileReader(path);
+        int data;
+        while ((data = reader.read()) != -1) {
+            System.out.print((char) data);
+        }
+        // reader.close() отсутствует
+    }
+}|||LABEL|||1
+
+// Незакрытый Statement
+class DatabaseLeak {
+    void queryUsers(Connection conn) throws SQLException {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+        while (rs.next()) {
+            System.out.println(rs.getString("username"));
+        }
+        // stmt.close() и rs.close() отсутствуют
+    }
+}|||LABEL|||1
+
+// Незакрытый Socket
+class SocketLeak {
+    void connect(String host, int port) throws IOException {
+        Socket socket = new Socket(host, port);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        System.out.println(in.readLine());
+        // socket.close() отсутствует
+    }
+}|||LABEL|||1
+
+// Пустой catch-блок
+class SilentException {
+    void readConfig(String path) {
+        try {
+            Properties props = new Properties();
+            props.load(new FileInputStream(path));
+        } catch (IOException e) {
+            // Ничего не делаем
+        }
+    }
+}|||LABEL|||2
+
+// Слишком широкий catch (Exception)
+class OverCatch {
+    void parseData(String json) {
+        try {
+            JSONObject obj = new JSONObject(json);
+        } catch (Exception e) { // Слишком обобщённо
+            System.err.println("Error");
+        }
+    }
+}|||LABEL|||2
+
+// Игнорирование InterruptedException
+class ThreadInterruptIgnore {
+    void sleepUninterruptibly() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // Не восстанавливаем флаг прерывания
+        }
+    }
+}|||LABEL|||2
+
+// Разрешение внешних сущностей
+class XXEVulnerable {
+    void parseXML(String file) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(new File(file)); // Уязвимо к XXE
+    }
+}|||LABEL|||3
+
+// Разрешённые DTD
+class DTDEnabledParser {
+    void parse(String xml) throws Exception {
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, true);
+        XMLEventReader reader = factory.createXMLEventReader(new StringReader(xml));
+    }
+}|||LABEL|||3
+
+// Прямой вызов метода без проверки на null
+class NpeRisk {
+    void printLength(String str) {
+        System.out.println(str.length()); // Возможен NPE
+    }
+}|||LABEL|||4
+
+// Возврат null вместо Optional
+class NullReturn {
+    String findUser(int id) {
+        if (id < 0) return null; // Плохая практика
+        return "user" + id;
+    }
+}|||LABEL|||4
+
+// Прямой запуск команды из пользовательского ввода
+class CommandInjection {
+    void runCommand(String input) throws IOException {
+        Runtime.getRuntime().exec("ping " + input); // Опасно!
+    }
+}|||LABEL|||5
+
+// Конкатенация SQL-запросов
+class SqlInjection {
+    void login(Connection conn, String user, String pass) throws SQLException {
+        String query = "SELECT * FROM users WHERE login='" + user + "' AND pass='" + pass + "'";
+        Statement stmt = conn.createStatement();
+        stmt.executeQuery(query);
+    }
+}|||LABEL|||6
+
+// Использование устаревшего Date
+class OldDateApi {
+    void printDate() {
+        Date date = new Date(); // Устарело
+        System.out.println(date);
+    }
+}|||LABEL|||7
+
+// Использование Vector вместо ArrayList
+class OldCollections {
+    void addItems() {
+        Vector<String> vec = new Vector<>(); // Устарело
+        vec.add("item");
+    }
+}|||LABEL|||7
+
+// Использование PreparedStatement
+class SafeSql {
+    void getUser(Connection conn, String name) throws SQLException {
+        String query = "SELECT * FROM users WHERE name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+        }
+    }
+}|||LABEL|||0
+
+// Безопасный парсинг XML
+class SafeXml {
+    void parse(String xml) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(new InputSource(new StringReader(xml)));
+    }
+}|||LABEL|||0
+
+// --- Safe use of modern Date-Time API ---
+class ModernDateUsage {
+    void printCurrentTime() {
+        // Using java.time package, which is thread-safe and immutable
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Paris"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+        System.out.println(now.format(formatter));
+    }
+}|||LABEL|||0
+
+// --- Safe deserialization with whitelisting ---
+class SafeDeserialization {
+    void deserializeSafely(InputStream inputStream) {
+        try {
+            // Using a custom ObjectInputStream that only allows specific classes
+            SafeObjectInputStream ois = new SafeObjectInputStream(inputStream);
+            Object obj = ois.readObject(); // Only User or other safe classes can be created
+            System.out.println("Object deserialized: " + obj.getClass().getName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    // SafeObjectInputStream would be a custom class that overrides resolveClass to check against a whitelist
+}|||LABEL|||0
+
+// --- Path Traversal vulnerability due to insufficient validation ---
+class FileAccessor {
+    private final String BASE_DIRECTORY = "/var/www/html/user_files/";
+
+    void readFile(String filename) {
+        // Vulnerable: attacker can provide filename = "../../../etc/passwd"
+        File file = new File(BASE_DIRECTORY + filename);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}|||LABEL|||1 // Path Traversal - это уязвимость, связанная с ресурсами
+
+// --- Logging exception details without sanitization (Log Injection) ---
+class InsecureLogging {
+    private static final Logger LOGGER = Logger.getLogger(InsecureLogging.class.getName());
+
+    void logLoginAttempt(String username) {
+        // Vulnerable if username contains newline characters, e.g., "admin\nINFO: User admin logged out"
+        // This can corrupt log files and hide malicious activity.
+        LOGGER.info("Login attempt for user: " + username);
+    }
+}|||LABEL|||2 // Плохая обработка данных, схожая с плохой обработкой исключений
+
+// --- Cross-Site Scripting (XSS) vulnerability in a servlet ---
+class XssServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String name = request.getParameter("name");
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+        out.println("<html><body>");
+        // Vulnerable: 'name' is directly printed. If name="<script>alert(1)</script>", it will execute.
+        out.println("<h1>Hello, " + name + "</h1>");
+        out.println("</body></html>");
+    }
+}|||LABEL|||3 // Можно классифицировать как XXE-подобную уязвимость (внедрение кода)
+
+// --- Hardcoded API Key ---
+class ApiClient {
+    private final String API_KEY = "qwert12345_this_is_a_very_secret_key"; // Hardcoded secret
+
+    void connect() {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.service.com/data"))
+                .header("X-API-KEY", API_KEY)
+                .build();
+        // ... send request ...
+    }
+}|||LABEL|||4 // Можно соотнести с риском утечки данных, как NPE
+
+// --- Insecure use of java.util.Random for security token ---
+class TokenGenerator {
+    String generateSessionToken() {
+        // Insecure: java.util.Random is predictable. An attacker could guess the next token.
+        Random random = new Random();
+        long tokenValue = random.nextLong();
+        return Long.toHexString(tokenValue);
+    }
+}|||LABEL|||5 // Схоже с RCE, т.к. позволяет удаленно захватить сессию
+
+// --- LDAP Injection vulnerability ---
+class LdapAuthenticator {
+    void authenticate(String username, String password) throws NamingException {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, "ldap://localhost:389");
+
+        DirContext ctx = new InitialDirContext(env);
+        // Vulnerable: username can be crafted like "*)(uid=*))(|(uid=*" to bypass authentication
+        String filter = "(&(uid=" + username + ")(userPassword=" + password + "))";
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        NamingEnumeration<?> results = ctx.search("ou=users,dc=example,dc=com", filter, sc);
+        // ... process results ...
+    }
+}|||LABEL|||6 // Аналогично SQL-инъекции, но для LDAP
+
+// --- Insecure comparison of secrets (Timing Attack) ---
+class BadSecretComparison {
+    boolean constantTimeEquals(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        // Vulnerable to timing attacks. The loop will exit faster for non-matching arrays.
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}|||LABEL|||7 // Проблема с криптографической операцией, схожая с использованием устаревших API
+
+
+
+// балансировка датасета
+
+
+void p1(User u) { u.name.toLowerCase(); }|||LABEL|||4
+void p2(String s) { if (s.length() > 0) return; }|||LABEL|||4
+void p3(File f) { System.out.println(f.getName()); }|||LABEL|||4
+void p4(Order o) { o.calculateTotal(); }|||LABEL|||4
+void p5(List l) { l.clear(); }|||LABEL|||4
+void p6(Data d) { d.saveToDb(); }|||LABEL|||4
+void p7(Config c) { c.refresh(); }|||LABEL|||4
+void p8(Session s) { s.invalidate(); }|||LABEL|||4
+void p9(Context ctx) { ctx.stop(); }|||LABEL|||4
+void p10(Node n) { n.getNext().val = 1; }|||LABEL|||4
+void p11(Request r) { r.getParam("id").trim(); }|||LABEL|||4
+void p12(User u) { u.profile.update(); }|||LABEL|||4
+void p13(Account a) { a.balance += 100; }|||LABEL|||4
+void p14(Message m) { m.send(); }|||LABEL|||4
+void p15(Token t) { t.verify(); }|||LABEL|||4
+void p16(Image i) { i.draw(); }|||LABEL|||4
+void p17(Buffer b) { b.flip(); }|||LABEL|||4
+void p18(Logger l) { l.info("msg"); }|||LABEL|||4
+void p19(Client c) { c.connect(); }|||LABEL|||4
+void p20(Task t) { t.start(); }|||LABEL|||4
+
+void c1(App a) { a.getService().run(); }|||LABEL|||4
+void c2(User u) { u.getAddr().getCity(); }|||LABEL|||4
+void c3(Car c) { c.getEngine().start(); }|||LABEL|||4
+void c4(Store s) { s.getOwner().getName(); }|||LABEL|||4
+void c5(Map m) { m.get("key").toString(); }|||LABEL|||4
+void c6(List l) { l.get(0).hashCode(); }|||LABEL|||4
+void c7(Request r) { r.getHeaders().size(); }|||LABEL|||4
+void c8(Response r) { r.getBody().read(); }|||LABEL|||4
+void c9(Event e) { e.getSource().getId(); }|||LABEL|||4
+void c10(Book b) { b.getAuthor().bio.trim(); }|||LABEL|||4
+void c11(Doc d) { d.getMeta().setAuthor("X"); }|||LABEL|||4
+void c12(Tree t) { t.root.left.right.val = 0; }|||LABEL|||4
+void c13(Game g) { g.getPlayer().score++; }|||LABEL|||4
+void c14(Film f) { f.getStudio().loc.city(); }|||LABEL|||4
+void c15(Plan p) { p.getStep(1).execute(); }|||LABEL|||4
+void c16(Link l) { l.getTarget().ping(); }|||LABEL|||4
+void c17(Box b) { b.getContent().weight(); }|||LABEL|||4
+void c18(Job j) { j.getLog().clear(); }|||LABEL|||4
+void c19(Input i) { i.getStream().available(); }|||LABEL|||4
+void c20(Db d) { d.getConn().close(); }|||LABEL|||4
+
+void a1(int[] arr) { int x = arr.length; }|||LABEL|||4
+void a2(String[] s) { s[0].length(); }|||LABEL|||4
+void a3(Object[] o) { o.hashCode(); }|||LABEL|||4
+void a4(byte[] b) { b[10] = 1; }|||LABEL|||4
+void a5(long[] l) { l.clone(); }|||LABEL|||4
+void a6(float[] f) { float x = f[0]; }|||LABEL|||4
+void a7(double[] d) { d.toString(); }|||LABEL|||4
+void a8(short[] s) { s.getClass(); }|||LABEL|||4
+void a9(char[] c) { c[0] = 'a'; }|||LABEL|||4
+void a10(boolean[] b) { if(b[0]) return; }|||LABEL|||4
+void a11(User[] users) { users[0].login(); }|||LABEL|||4
+void a12(Task[] t) { t.length > 0; }|||LABEL|||4
+void a13(Node[] n) { n[1].val = 5; }|||LABEL|||4
+void a14(Item[] i) { i[i.length-1].id = 0; }|||LABEL|||4
+void a15(Page[] p) { p[0].url.trim(); }|||LABEL|||4
+void a16(File[] f) { f[0].exists(); }|||LABEL|||4
+void a17(Msg[] m) { m[0].body = ""; }|||LABEL|||4
+void a18(Long[] l) { long x = l[0]; }|||LABEL|||4
+void a19(Integer[] i) { int x = i[0]; }|||LABEL|||4
+void a20(Double[] d) { d[0].doubleValue(); }|||LABEL|||4
+
+int u1(Integer i) { return i + 5; }|||LABEL|||4
+boolean u2(Boolean b) { return b || true; }|||LABEL|||4
+double u3(Double d) { return d * 2.5; }|||LABEL|||4
+void u4(Long l) { if (l > 0) return; }|||LABEL|||4
+char u5(Character c) { return c; }|||LABEL|||4
+float u6(Float f) { return f / 1.0f; }|||LABEL|||4
+byte u7(Byte b) { return b; }|||LABEL|||4
+short u8(Short s) { return s; }|||LABEL|||4
+void v1(User u) { u.name = u.name.trim(); }|||LABEL|||4
+void v2(String s) { s = s.substring(1); }|||LABEL|||4
+void v3(Data d) { d.val.toString(); }|||LABEL|||4
+void v4(List l) { l.add(null); l.get(0).toString(); }|||LABEL|||4
+void v5(Stack s) { s.pop().hashCode(); }|||LABEL|||4
+void v6(Queue q) { q.poll().getClass(); }|||LABEL|||4
+void v7(Deque d) { d.peek().toString(); }|||LABEL|||4
+void v8(Vector v) { v.firstElement().toString(); }|||LABEL|||4
+void v9(Set s) { s.iterator().next().hashCode(); }|||LABEL|||4
+void v10(Table t) { t.getRow(0).clear(); }|||LABEL|||4
+void v11(Grid g) { g.getCell(1,1).val = 0; }|||LABEL|||4
+void v12(Model m) { m.data.refresh(); }|||LABEL|||4
+void v13(View v) { v.parent.draw(); }|||LABEL|||4
+void v14(Controller c) { c.model.save(); }|||LABEL|||4
+void v15(Service s) { s.repo.findById(1).id = 1; }|||LABEL|||4
+void v16(Auth a) { a.user.token.trim(); }|||LABEL|||4
+void v17(Pay p) { p.card.cvv.length(); }|||LABEL|||4
+void v18(Cart c) { c.items.get(0).price(); }|||LABEL|||4
+void v19(Promo p) { p.code.toUpperCase(); }|||LABEL|||4
+void v20(Gift g) { g.sender.name.trim(); }|||LABEL|||4
+
+class UserManager {
+    void update(User u) {
+        if (u.getName().equals("admin")) { // Если u == null, будет NPE
+            System.out.println("Admin access");
+        }
+    }
+} |||LABEL|||4
+
+class OrderService {
+    double getPrice(Order o) {
+        return o.getItem().getCost(); // Если item == null, будет NPE
+    }
+} |||LABEL|||4
+
+// класс 2
+
+void e1(File f){try{f.createNewFile();}catch(IOException e){}}|||LABEL|||2
+void e2(String s){try{Integer.parseInt(s);}catch(NumberFormatException e){}}|||LABEL|||2
+void e3(){try{Thread.sleep(100);}catch(InterruptedException e){}}|||LABEL|||2
+void e4(Data d){try{d.save();}catch(Exception e){}}|||LABEL|||2
+void e5(URL u){try{u.openStream();}catch(IOException e){}}|||LABEL|||2
+void e6(Object o){try{o.wait();}catch(InterruptedException e){}}|||LABEL|||2
+void e7(String j){try{new JSONObject(j);}catch(Exception e){}}|||LABEL|||2
+void e8(Connection c){try{c.close();}catch(SQLException e){}}|||LABEL|||2
+void e9(Socket s){try{s.connect(null);}catch(IOException e){}}|||LABEL|||2
+void e10(InputStream i){try{i.read();}catch(Exception e){}}|||LABEL|||2
+void e11(Class c){try{c.newInstance();}catch(Exception e){}}|||LABEL|||2
+void e12(Field f){try{f.get(null);}catch(Exception e){}}|||LABEL|||2
+void e13(Method m){try{m.invoke(null);}catch(Exception e){}}|||LABEL|||2
+void e14(String p){try{Paths.get(p);}catch(Exception e){}}|||LABEL|||2
+void e15(ZipFile z){try{z.entries();}catch(Exception e){}}|||LABEL|||2
+void e16(Driver d){try{d.acceptsURL("");}catch(SQLException e){}}|||LABEL|||2
+void e17(Scanner s){try{s.next();}catch(Exception e){}}|||LABEL|||2
+void e18(Context c){try{c.bind("","");}catch(Exception e){}}|||LABEL|||2
+void e19(Lock l){try{l.lockInterruptibly();}catch(Exception e){}}|||LABEL|||2
+void e20(Thread t){try{t.join();}catch(InterruptedException e){}}|||LABEL|||2
+void e21(Barrier b){try{b.await();}catch(Exception e){}}|||LABEL|||2
+void e22(Future f){try{f.get();}catch(Exception e){}}|||LABEL|||2
+void e23(Process p){try{p.waitFor();}catch(Exception e){}}|||LABEL|||2
+void e24(Image i){try{ImageIO.read(new File(""));}catch(Exception e){}}|||LABEL|||2
+void e25(Cipher c){try{c.doFinal();}catch(Exception e){}}|||LABEL|||2
+void e26(MessageDigest d){try{d.digest();}catch(Exception e){}}|||LABEL|||2
+void e27(Signature s){try{s.sign();}catch(Exception e){}}|||LABEL|||2
+void e28(KeyStore k){try{k.load(null);}catch(Exception e){}}|||LABEL|||2
+void e29(CertPath p){try{p.getEncoded();}catch(Exception e){}}|||LABEL|||2
+void e30(Service s){try{s.start();}catch(Exception e){}}|||LABEL|||2
+
+void g1(String s){try{Long.valueOf(s);}catch(Throwable t){System.out.print("err");}}|||LABEL|||2
+void g2(){try{doWork();}catch(Exception e){e.printStackTrace();}}|||LABEL|||2
+void g3(){try{init();}catch(RuntimeException re){System.out.print(re);}}|||LABEL|||2
+void g4(){try{run();}catch(Exception e){return;}}|||LABEL|||2
+void g5(){try{stop();}catch(Throwable t){/* log later */}}|||LABEL|||2
+void g6(){try{check();}catch(Exception e){System.exit(1);}}|||LABEL|||2
+void g7(){try{load();}catch(Exception e){throw new RuntimeException();}}|||LABEL|||2
+void g8(){try{send();}catch(Throwable t){log.error("fail");}}|||LABEL|||2
+void g9(){try{recv();}catch(Exception e){System.out.println(e.getMessage());}}|||LABEL|||2
+void g10(){try{open();}catch(Exception e){/* ignore */}}|||LABEL|||2
+void g11(){try{close();}catch(Throwable t){t.getMessage();}}|||LABEL|||2
+void g12(){try{parse();}catch(Exception e){e.toString();}}|||LABEL|||2
+void g13(){try{write();}catch(Exception e){System.out.print("fail");}}|||LABEL|||2
+void g14(){try{read();}catch(Throwable t){}}|||LABEL|||2
+void g15(){try{calc();}catch(Exception e){e.printStackTrace();}}|||LABEL|||2
+void g16(){try{find();}catch(RuntimeException r){}}|||LABEL|||2
+void g17(){try{map();}catch(Exception e){}}|||LABEL|||2
+void g18(){try{list();}catch(Throwable t){}}|||LABEL|||2
+void g19(){try{set();}catch(Exception e){}}|||LABEL|||2
+void g20(){try{get();}catch(Exception e){}}|||LABEL|||2
+void g21(){try{put();}catch(Throwable t){}}|||LABEL|||2
+void g22(Node n){try{n.clone();}catch(Exception e){}}|||LABEL|||2
+void g23(App a){try{a.start();}catch(Exception e){}}|||LABEL|||2
+void g24(Job j){try{j.exec();}catch(Throwable t){}}|||LABEL|||2
+void g25(Task t){try{t.run();}catch(Exception e){}}|||LABEL|||2
+void g26(Bot b){try{b.ping();}catch(Exception e){}}|||LABEL|||2
+void g27(Api a){try{a.call();}catch(Throwable t){}}|||LABEL|||2
+void g28(Web w){try{w.get();}catch(Exception e){}}|||LABEL|||2
+void g29(Auth a){try{a.login();}catch(Exception e){}}|||LABEL|||2
+void g30(Pay p){try{p.pay();}catch(Throwable t){}}|||LABEL|||2
+
+void s1(){try{Thread.sleep(10);}catch(InterruptedException e){}}|||LABEL|||2
+void s2(){try{wait(1);}catch(InterruptedException e){System.out.print(e);}}|||LABEL|||2
+void s3(){try{Thread.sleep(5);}catch(InterruptedException e){e.printStackTrace();}}|||LABEL|||2
+void s4(){try{System.in.read();}catch(IOException e){}}|||LABEL|||2
+void s5(){try{new URL("").openStream();}catch(Exception e){}}|||LABEL|||2
+void s6(){try{Integer.decode("");}catch(Exception e){}}|||LABEL|||2
+void s7(){try{Class.forName("");}catch(Exception e){}}|||LABEL|||2
+void s8(){try{new File("").getCanonicalPath();}catch(Exception e){}}|||LABEL|||2
+void s9(){try{System.load("");}catch(Throwable t){}}|||LABEL|||2
+void s10(){try{Runtime.getRuntime().exec("");}catch(Exception e){}}|||LABEL|||2
+void s11(){try{new ServerSocket(0);}catch(Exception e){}}|||LABEL|||2
+void s12(){try{new DatagramSocket(0);}catch(Exception e){}}|||LABEL|||2
+void s13(){try{InetAddress.getByName("");}catch(Exception e){}}|||LABEL|||2
+void s14(){try{Properties.class.newInstance();}catch(Exception e){}}|||LABEL|||2
+void s15(){try{ResourceBundle.getBundle("");}catch(Exception e){}}|||LABEL|||2
+void s16(){try{System.setProperty("","");}catch(Exception e){}}|||LABEL|||2
+void s17(){try{System.console().readLine();}catch(Exception e){}}|||LABEL|||2
+void s18(){try{Enum.valueOf(null, "");}catch(Exception e){}}|||LABEL|||2
+void s19(){try{String.class.getField("");}catch(Exception e){}}|||LABEL|||2
+void s20(){try{List.class.getMethod("");}catch(Exception e){}}|||LABEL|||2
+void s21(){try{Math.class.getDeclaredFields();}catch(Exception e){}}|||LABEL|||2
+void s22(){try{Object.class.getDeclaredMethods();}catch(Exception e){}}|||LABEL|||2
+void s23(){try{Thread.currentThread().join();}catch(Exception e){}}|||LABEL|||2
+void s24(){try{System.getSecurityManager();}catch(Exception e){}}|||LABEL|||2
+void s25(){try{Proxy.getProxyClass(null);}catch(Exception e){}}|||LABEL|||2
+
+class ConfigLoader {
+    void load(String path) {
+        try {
+            Properties p = new Properties();
+            p.load(new FileInputStream(path));
+        } catch (IOException e) {
+            // Пустой блок - это ошибка Класса 2
+        }
+    }
+} |||LABEL|||2
+
+class UserSocket {
+    void connect(String h, int p) {
+        try {
+            Socket s = new Socket(h, p);
+        } catch (Exception e) {
+            e.printStackTrace(); // Печать стека без логики - Класс 2
+        }
+    }
+} |||LABEL|||2
+
+
+
+// класс 1
+
+
+// Блок 1: Файловые операции (IO)
+class FileOp1 { void save(String p, String d) throws Exception { FileWriter w = new FileWriter(p); w.write(d); } } |||LABEL|||1
+class FileOp2 { void read(String p) throws Exception { FileReader r = new FileReader(p); r.read(); } } |||LABEL|||1
+class FileOp3 { void log(String m) throws Exception { FileOutputStream o = new FileOutputStream("l.txt"); o.write(m.getBytes()); } } |||LABEL|||1
+class FileOp4 { void get(String p) throws Exception { FileInputStream i = new FileInputStream(p); i.read(); } } |||LABEL|||1
+class FileOp5 { void copy(String s) throws Exception { RandomAccessFile f = new RandomAccessFile(s, "r"); } } |||LABEL|||1
+class FileOp6 { void scan(File f) throws Exception { Scanner s = new Scanner(f); s.nextLine(); } } |||LABEL|||1
+class FileOp7 { void write(Path p) throws Exception { BufferedWriter b = Files.newBufferedWriter(p); b.write("x"); } } |||LABEL|||1
+class FileOp8 { void read(Path p) throws Exception { BufferedReader r = Files.newBufferedReader(p); r.readLine(); } } |||LABEL|||1
+class FileOp9 { void pipe(InputStream i) throws Exception { FileOutputStream o = new FileOutputStream("t.dat"); o.write(i.readAllBytes()); } } |||LABEL|||1
+class FileOp10 { void load(String f) throws Exception { Properties p = new Properties(); p.load(new FileInputStream(f)); } } |||LABEL|||1
+class FileOp11 { void print(String s) throws Exception { PrintWriter p = new PrintWriter("out.txt"); p.print(s); } } |||LABEL|||1
+class FileOp12 { void stream(String p) throws Exception { ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(p)); } } |||LABEL|||1
+class FileOp13 { void input(String p) throws Exception { ObjectInputStream i = new ObjectInputStream(new FileInputStream(p)); } } |||LABEL|||1
+class FileOp14 { void sync(String f) throws Exception { FileChannel c = new FileOutputStream(f).getChannel(); c.write(null); } } |||LABEL|||1
+class FileOp15 { void data(String p) throws Exception { DataOutputStream d = new DataOutputStream(new FileOutputStream(p)); } } |||LABEL|||1
+class FileOp16 { void readD(String p) throws Exception { DataInputStream d = new DataInputStream(new FileInputStream(p)); } } |||LABEL|||1
+class FileOp17 { void tmp(String c) throws Exception { FileWriter w = new FileWriter(File.createTempFile("a", "b")); w.write(c); } } |||LABEL|||1
+class FileOp18 { void buf(String p) throws Exception { BufferedOutputStream b = new BufferedOutputStream(new FileOutputStream(p)); } } |||LABEL|||1
+class FileOp19 { void bufI(String p) throws Exception { BufferedInputStream b = new BufferedInputStream(new FileInputStream(p)); } } |||LABEL|||1
+class FileOp20 { void fmt(String p) throws Exception { Formatter f = new Formatter(p); f.format("s"); } } |||LABEL|||1
+
+// Блок 2: Сетевые ресурсы (Network)
+class Net1 { void conn(String h) throws Exception { Socket s = new Socket(h, 80); s.getInputStream().read(); } } |||LABEL|||1
+class Net2 { void bind(int p) throws Exception { ServerSocket s = new ServerSocket(p); s.accept(); } } |||LABEL|||1
+class Net3 { void send(String m) throws Exception { DatagramSocket s = new DatagramSocket(); s.send(null); } } |||LABEL|||1
+class Net4 { void fetch(String u) throws Exception { InputStream i = new URL(u).openStream(); i.read(); } } |||LABEL|||1
+class Net5 { void post(String u) throws Exception { URLConnection c = new URL(u).openConnection(); c.getOutputStream().write(1); } } |||LABEL|||1
+class Net6 { void pipe(String h, int p) throws Exception { Socket s = new Socket(h, p); s.getOutputStream().write(1); } } |||LABEL|||1
+class Net7 { void listen() throws Exception { ServerSocket ss = new ServerSocket(9090); ss.accept(); } } |||LABEL|||1
+class Net8 { void download(URL u) throws Exception { InputStream s = u.openStream(); s.transferTo(null); } } |||LABEL|||1
+class Net9 { void connect(String i, int p) throws Exception { Socket s = new Socket(InetAddress.getByName(i), p); } } |||LABEL|||1
+class Net10 { void rcv() throws Exception { MulticastSocket s = new MulticastSocket(4446); s.joinGroup(null); } } |||LABEL|||1
+
+// Блок 3: Базы данных (Database)
+class Db1 { void run(Connection c) throws Exception { Statement s = c.createStatement(); s.execute("SELECT 1"); } } |||LABEL|||1
+class Db2 { void get(Connection c) throws Exception { ResultSet r = c.createStatement().executeQuery("SELECT name FROM u"); } } |||LABEL|||1
+class Db3 { void upd(Connection c, String n) throws Exception { PreparedStatement p = c.prepareStatement("UPDATE u SET name=?"); p.execute(); } } |||LABEL|||1
+class Db4 { void find(Connection c) throws Exception { CallableStatement s = c.prepareCall("{call find_user}"); s.execute(); } } |||LABEL|||1
+class Db5 { void meta(Connection c) throws Exception { ResultSet r = c.getMetaData().getTables(null, null, null, null); } } |||LABEL|||1
+class Db6 { void list(DataSource d) throws Exception { Connection c = d.getConnection(); c.getSchema(); } } |||LABEL|||1
+class Db7 { void query(Statement s) throws Exception { ResultSet r = s.executeQuery("SELECT id FROM users"); r.next(); } } |||LABEL|||1
+class Db8 { void exec(Connection c) throws Exception { PreparedStatement p = c.prepareStatement("INSERT INTO t VALUES(1)"); } } |||LABEL|||1
+class Db9 { void keys(Statement s) throws Exception { ResultSet r = s.getGeneratedKeys(); r.next(); } } |||LABEL|||1
+class Db10 { void batch(Connection c) throws Exception { Statement s = c.createStatement(); s.addBatch("INSERT INTO a VALUES(1)"); } } |||LABEL|||1
+
+// Блок 4: Архивы и сжатие (Zip/Gzip)
+class Zip1 { void list(String p) throws Exception { ZipFile z = new ZipFile(p); z.entries(); } } |||LABEL|||1
+class Zip2 { void pack(OutputStream o) throws Exception { ZipOutputStream z = new ZipOutputStream(o); z.putNextEntry(null); } } |||LABEL|||1
+class Zip3 { void unpack(InputStream i) throws Exception { ZipInputStream z = new ZipInputStream(i); z.getNextEntry(); } } |||LABEL|||1
+class Zip4 { void gz(OutputStream o) throws Exception { GZIPOutputStream g = new GZIPOutputStream(o); g.write(1); } } |||LABEL|||1
+class Zip5 { void ungz(InputStream i) throws Exception { GZIPInputStream g = new GZIPInputStream(i); g.read(); } } |||LABEL|||1
+class Zip6 { void def(OutputStream o) throws Exception { DeflaterOutputStream d = new DeflaterOutputStream(o); d.write(1); } } |||LABEL|||1
+class Zip7 { void inf(InputStream i) throws Exception { InflaterInputStream n = new InflaterInputStream(i); n.read(); } } |||LABEL|||1
+class Zip8 { void jar(String p) throws Exception { JarFile j = new JarFile(p); j.getManifest(); } } |||LABEL|||1
+class Zip9 { void jstream(InputStream i) throws Exception { JarInputStream j = new JarInputStream(i); j.getNextJarEntry(); } } |||LABEL|||1
+class Zip10 { void jout(OutputStream o) throws Exception { JarOutputStream j = new JarOutputStream(o); j.putNextEntry(null); } } |||LABEL|||1
+
+// Блок 5: Вариации названий и контекста (Business logic style)
+class UserRepo { void export(String f) throws Exception { FileWriter w = new FileWriter(f); w.write("users"); } } |||LABEL|||1
+class AuthService { void log(String m) throws Exception { FileOutputStream s = new FileOutputStream("auth.log"); s.write(1); } } |||LABEL|||1
+class OrderDao { void save(String p) throws Exception { PrintWriter out = new PrintWriter(p); out.println("order"); } } |||LABEL|||1
+class BillingTask { void read(String f) throws Exception { FileReader r = new FileReader(f); r.read(); } } |||LABEL|||1
+class ReportService { void gen(Path p) throws Exception { BufferedWriter b = Files.newBufferedWriter(p); b.write("rep"); } } |||LABEL|||1
+class NetworkTask { void ping(String h) throws Exception { Socket s = new Socket(h, 7); s.close(); /* Only close socket, not stream */ } } |||LABEL|||1
+class DataFetcher { void get(URL u) throws Exception { InputStream s = u.openStream(); s.read(); } } |||LABEL|||1
+class SettingsUtil { void load(String p) throws Exception { FileInputStream i = new FileInputStream(p); } } |||LABEL|||1
+class CacheService { void save(String k, byte[] v) throws Exception { FileOutputStream f = new FileOutputStream(k); f.write(v); } } |||LABEL|||1
+class TokenUtil { void store(String t) throws Exception { FileWriter f = new FileWriter("t.txt"); f.write(t); } } |||LABEL|||1
+class ExportJob { void run(String p) throws Exception { PrintWriter w = new PrintWriter(new File(p)); w.print("ok"); } } |||LABEL|||1
+class MailService { void attach(String p) throws Exception { FileInputStream f = new FileInputStream(p); f.read(); } } |||LABEL|||1
+class BackupTask { void start(String f) throws Exception { ZipOutputStream z = new ZipOutputStream(new FileOutputStream(f)); } } |||LABEL|||1
+class SystemLogs { void write(String m) throws Exception { FileWriter w = new FileWriter("sys.log", true); w.write(m); } } |||LABEL|||1
+class AuditDao { void save(Connection c) throws Exception { Statement s = c.createStatement(); s.execute("INSERT INTO a VALUES(1)"); } } |||LABEL|||1
+class StatService { void fetch(Connection c) throws Exception { ResultSet r = c.createStatement().executeQuery("SELECT * FROM s"); } } |||LABEL|||1
+class HttpBuffer { void fill(URL u) throws Exception { BufferedInputStream b = new BufferedInputStream(u.openStream()); } } |||LABEL|||1
+class SearchRepo { void find(Connection c) throws Exception { PreparedStatement p = c.prepareStatement("SELECT 1"); p.execute(); } } |||LABEL|||1
+class FileCache { void put(String n, String v) throws Exception { FileWriter w = new FileWriter(n); w.write(v); } } |||LABEL|||1
+class LogWriter { void append(String m) throws Exception { PrintWriter p = new PrintWriter(new FileOutputStream("a.log", true)); } } |||LABEL|||1
+class StreamUtil { void pipe(InputStream i, String p) throws Exception { FileOutputStream o = new FileOutputStream(p); i.transferTo(o); } } |||LABEL|||1
+class ConfigService { void reload(String f) throws Exception { FileInputStream i = new FileInputStream(f); Properties p = new Properties(); p.load(i); } } |||LABEL|||1
+class SessionStore { void save(String id) throws Exception { ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(id)); } } |||LABEL|||1
+class KeyManager { void read(String p) throws Exception { FileInputStream f = new FileInputStream(p); f.readAllBytes(); } } |||LABEL|||1
+class ImageDao { void write(byte[] b) throws Exception { FileOutputStream f = new FileOutputStream("img.png"); f.write(b); } } |||LABEL|||1
+class QueryTask { void run(Connection c) throws Exception { Statement s = c.createStatement(); s.executeQuery("SELECT count(*) FROM t"); } } |||LABEL|||1
+class ResourceTask { void open(String p) throws Exception { RandomAccessFile r = new RandomAccessFile(p, "rw"); r.seek(0); } } |||LABEL|||1
+class SocketSrv { void start(int p) throws Exception { ServerSocket s = new ServerSocket(p); s.accept(); } } |||LABEL|||1
+class ScannerTask { void process(String s) throws Exception { Scanner sc = new Scanner(new StringReader(s)); sc.next(); } } |||LABEL|||1
+class ZipUtil { void create(String p) throws Exception { ZipOutputStream z = new ZipOutputStream(new FileOutputStream(p)); } } |||LABEL|||1
+class FinalTask { void end(String p) throws Exception { FileWriter w = new FileWriter(p); w.append("end"); } } |||LABEL|||1
+
+
+// класс 3:
+
+
+// Группа 1: DOM (DocumentBuilderFactory) - 15 вариаций
+class DomSrv1 { void f(InputStream i) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(i); } } |||LABEL|||3
+class DomSrv2 { void f(File x) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(x); } } |||LABEL|||3
+class DomSrv3 { void f(String s) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(s))); } } |||LABEL|||3
+class DomSrv4 { void f(byte[] b) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(b)); } } |||LABEL|||3
+class DomSrv5 { void f(InputStream s) throws Exception { DocumentBuilder b = DocumentBuilderFactory.newInstance().newDocumentBuilder(); b.parse(s); } } |||LABEL|||3
+class DomSrv6 { void f(Source s) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(s.toString()); } } |||LABEL|||3
+class DomSrv7 { void load(InputStream i) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(i); } } |||LABEL|||3
+class DomSrv8 { void open(File f) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(f); } } |||LABEL|||3
+class DomSrv9 { void read(String x) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(x)); } } |||LABEL|||3
+class DomSrv10 { void proc(InputStream s) throws Exception { DocumentBuilderFactory f = DocumentBuilderFactory.newInstance(); f.newDocumentBuilder().parse(s); } } |||LABEL|||3
+class DomSrv11 { void run(byte[] data) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(data)); } } |||LABEL|||3
+class DomSrv12 { void get(InputStream in) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(in); } } |||LABEL|||3
+class DomSrv13 { void cfg(String path) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path); } } |||LABEL|||3
+class DomSrv14 { void soap(InputStream s) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(s); } } |||LABEL|||3
+class DomSrv15 { void xml(File f) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(f); } } |||LABEL|||3
+
+// Группа 2: SAX (SAXParserFactory) - 15 вариаций
+class SaxSrv1 { void f(InputStream i, DefaultHandler h) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(i, h); } } |||LABEL|||3
+class SaxSrv2 { void f(File x, DefaultHandler h) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(x, h); } } |||LABEL|||3
+class SaxSrv3 { void f(String s, DefaultHandler h) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(new InputSource(s), h); } } |||LABEL|||3
+class SaxSrv4 { void f(byte[] b) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(new ByteArrayInputStream(b), new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv5 { void run(InputStream i) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(i, new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv6 { void proc(File f) throws Exception { SAXParser p = SAXParserFactory.newInstance().newSAXParser(); p.parse(f, null); } } |||LABEL|||3
+class SaxSrv7 { void load(InputStream s) throws Exception { SAXParserFactory f = SAXParserFactory.newInstance(); f.newSAXParser().parse(s, null); } } |||LABEL|||3
+class SaxSrv8 { void data(String x) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(new InputSource(x), null); } } |||LABEL|||3
+class SaxSrv9 { void msg(byte[] b) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(new ByteArrayInputStream(b), null); } } |||LABEL|||3
+class SaxSrv10 { void get(InputStream i) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(i, new org.xml.sax.helpers.DefaultHandler()); } } |||LABEL|||3
+class SaxSrv11 { void xml(File f) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(f, new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv12 { void read(InputStream s) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(s, new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv13 { void handle(Source s) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(s.toString(), new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv14 { void stream(InputStream i) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(i, new DefaultHandler()); } } |||LABEL|||3
+class SaxSrv15 { void parse(byte[] d) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(new ByteArrayInputStream(d), new DefaultHandler()); } } |||LABEL|||3
+
+// Группа 3: StAX (XMLInputFactory) - 15 вариаций
+class StaxSrv1 { void f(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(i); } } |||LABEL|||3
+class StaxSrv2 { void f(Reader r) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(r); } } |||LABEL|||3
+class StaxSrv3 { void f(Source s) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(s); } } |||LABEL|||3
+class StaxSrv4 { void f(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(i); } } |||LABEL|||3
+class StaxSrv5 { void f(Reader r) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(r); } } |||LABEL|||3
+class StaxSrv6 { void run(InputStream s) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(s); } } |||LABEL|||3
+class StaxSrv7 { void proc(Reader r) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(r); } } |||LABEL|||3
+class StaxSrv8 { void load(InputStream i) throws Exception { XMLInputFactory f = XMLInputFactory.newInstance(); f.createXMLStreamReader(i); } } |||LABEL|||3
+class StaxSrv9 { void get(Reader r) throws Exception { XMLInputFactory f = XMLInputFactory.newInstance(); f.createXMLEventReader(r); } } |||LABEL|||3
+class StaxSrv10 { void msg(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(i); } } |||LABEL|||3
+class StaxSrv11 { void ev(Reader r) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(r); } } |||LABEL|||3
+class StaxSrv12 { void stream(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(i); } } |||LABEL|||3
+class StaxSrv13 { void reader(Reader r) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(r); } } |||LABEL|||3
+class StaxSrv14 { void event(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(i); } } |||LABEL|||3
+class StaxSrv15 { void parse(Source s) throws Exception { XMLInputFactory.newInstance().createXMLEventReader(s); } } |||LABEL|||3
+
+// Группа 4: XSLT & Validation (Transformer / Schema) - 15 вариаций
+class XsltSrv1 { void f(Source s, Result r) throws Exception { TransformerFactory.newInstance().newTransformer().transform(s, r); } } |||LABEL|||3
+class XsltSrv2 { void f(Source s) throws Exception { TransformerFactory.newInstance().newTransformer().transform(s, null); } } |||LABEL|||3
+class XsltSrv3 { void run(Source xml, Result res) throws Exception { TransformerFactory.newInstance().newTransformer().transform(xml, res); } } |||LABEL|||3
+class XsltSrv4 { void proc(Source s) throws Exception { TransformerFactory f = TransformerFactory.newInstance(); f.newTransformer().transform(s, null); } } |||LABEL|||3
+class ValSrv1 { void f(Source s) throws Exception { SchemaFactory.newInstance("").newSchema().newValidator().validate(s); } } |||LABEL|||3
+class ValSrv2 { void f(Source s) throws Exception { SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema().newValidator().validate(s); } } |||LABEL|||3
+class ValSrv3 { void check(Source xml) throws Exception { SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema").newSchema().newValidator().validate(xml); } } |||LABEL|||3
+class ValSrv4 { void run(Source s) throws Exception { Validator v = SchemaFactory.newInstance("").newSchema().newValidator(); v.validate(s); } } |||LABEL|||3
+class DomSrv16 { void x(File f) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(f); } } |||LABEL|||3
+class SaxSrv16 { void x(String s) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(s, new DefaultHandler()); } } |||LABEL|||3
+class StaxSrv16 { void x(InputStream i) throws Exception { XMLInputFactory.newInstance().createXMLStreamReader(i); } } |||LABEL|||3
+class XsltSrv5 { void x(Source s) throws Exception { TransformerFactory.newInstance().newTransformer().transform(s, null); } } |||LABEL|||3
+class ValSrv5 { void x(Source s) throws Exception { SchemaFactory.newInstance("").newSchema(new File("")).newValidator().validate(s); } } |||LABEL|||3
+class DomSrv17 { void f(URL u) throws Exception { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(u.openStream()); } } |||LABEL|||3
+class SaxSrv17 { void f(URL u) throws Exception { SAXParserFactory.newInstance().newSAXParser().parse(u.openStream(), null); } } |||LABEL|||3
+
+
+
+// класс 6:
+
+
+
+// Группа 1: Классический JDBC Statement (20 вариаций)
+class SQL1 { void f(Connection c, String u) throws Exception { c.createStatement().executeQuery("SELECT * FROM users WHERE name='" + u + "'"); } } |||LABEL|||6
+class SQL2 { void f(Connection c, String p) throws Exception { c.createStatement().execute("SELECT id FROM products WHERE code=" + p); } } |||LABEL|||6
+class SQL3 { void f(Statement s, String i) throws Exception { s.executeUpdate("DELETE FROM logs WHERE id='" + i + "'"); } } |||LABEL|||6
+class SQL4 { void f(Connection c, String n) throws Exception { c.createStatement().executeQuery("SELECT balance FROM accounts WHERE owner='" + n + "'"); } } |||LABEL|||6
+class SQL5 { void f(Statement s, String t) throws Exception { s.execute("UPDATE tasks SET status='done' WHERE title='" + t + "'"); } } |||LABEL|||6
+class SQL6 { void f(Connection c, String m) throws Exception { c.createStatement().executeQuery("SELECT body FROM mail WHERE mid=" + m); } } |||LABEL|||6
+class SQL7 { void f(Statement s, String k) throws Exception { s.executeQuery("SELECT * FROM tags WHERE key LIKE '%" + k + "%'"); } } |||LABEL|||6
+class SQL8 { void f(Connection c, String u) throws Exception { c.createStatement().execute("INSERT INTO audit VALUES('" + u + "', now())"); } } |||LABEL|||6
+class SQL9 { void f(Statement s, String c) throws Exception { s.executeQuery("SELECT price FROM items WHERE category='" + c + "'"); } } |||LABEL|||6
+class SQL10 { void f(Connection c, String s) throws Exception { c.createStatement().executeQuery("SELECT * FROM sessions WHERE sid='" + s + "'"); } } |||LABEL|||6
+class SQL11 { void f(Statement st, String v) throws Exception { st.execute("UPDATE settings SET val='" + v + "' WHERE id=1"); } } |||LABEL|||6
+class SQL12 { void f(Connection cn, String l) throws Exception { cn.createStatement().executeQuery("SELECT * FROM docs WHERE lang='" + l + "'"); } } |||LABEL|||6
+class SQL13 { void f(Statement s, String d) throws Exception { s.executeQuery("SELECT count(*) FROM events WHERE date='" + d + "'"); } } |||LABEL|||6
+class SQL14 { void f(Connection c, String a) throws Exception { c.createStatement().execute("SELECT city FROM addr WHERE zip='" + a + "'"); } } |||LABEL|||6
+class SQL15 { void f(Statement s, String n) throws Exception { s.executeUpdate("UPDATE profile SET bio='" + n + "' WHERE uid=1"); } } |||LABEL|||6
+class SQL16 { void f(Connection c, String i) throws Exception { c.createStatement().executeQuery("SELECT * FROM news WHERE id=" + i); } } |||LABEL|||6
+class SQL17 { void f(Statement s, String t) throws Exception { s.execute("SELECT author FROM books WHERE title='" + t + "'"); } } |||LABEL|||6
+class SQL18 { void f(Connection c, String p) throws Exception { c.createStatement().executeQuery("SELECT price FROM orders WHERE pid=" + p); } } |||LABEL|||6
+class SQL19 { void f(Statement s, String n) throws Exception { s.executeQuery("SELECT * FROM clients WHERE company='" + n + "'"); } } |||LABEL|||6
+class SQL20 { void f(Connection c, String u) throws Exception { c.createStatement().execute("DELETE FROM tokens WHERE user='" + u + "'"); } } |||LABEL|||6
+
+// Группа 2: Опасный String.format и конкатенация в PreparedStatement (20 вариаций)
+class SQL21 { void f(Connection c, String u) throws Exception { c.prepareStatement("SELECT * FROM u WHERE n='" + u + "'"); } } |||LABEL|||6
+class SQL22 { void f(Connection c, String i) throws Exception { c.prepareStatement("DELETE FROM t WHERE id=" + i).execute(); } } |||LABEL|||6
+class SQL23 { void f(Statement s, String n) throws Exception { s.execute(String.format("SELECT * FROM p WHERE n='%s'", n)); } } |||LABEL|||6
+class SQL24 { void f(Connection c, String k) throws Exception { String q = String.format("SELECT v FROM s WHERE k='%s'", k); c.createStatement().execute(q); } } |||LABEL|||6
+class SQL25 { void f(Connection c, String u) throws Exception { c.prepareStatement("UPDATE users SET p='1' WHERE u='" + u + "'"); } } |||LABEL|||6
+class SQL26 { void f(Statement s, String v) throws Exception { s.executeQuery("SELECT * FROM t WHERE val=" + v); } } |||LABEL|||6
+class SQL27 { void f(Connection c, String n) throws Exception { String s = "SELECT id FROM x WHERE n='" + n + "'"; c.prepareStatement(s); } } |||LABEL|||6
+class SQL28 { void f(Statement st, String p) throws Exception { st.execute(String.format("DELETE FROM cache WHERE key='%s'", p)); } } |||LABEL|||6
+class SQL29 { void f(Connection c, String a) throws Exception { c.prepareStatement("SELECT * FROM b WHERE author='" + a + "'"); } } |||LABEL|||6
+class SQL30 { void f(Statement s, String i) throws Exception { s.executeQuery(String.format("SELECT data FROM blob WHERE id=%s", i)); } } |||LABEL|||6
+class SQL31 { void f(Connection c, String n) throws Exception { c.prepareStatement("SELECT 1 FROM dual WHERE name='" + n + "'"); } } |||LABEL|||6
+class SQL32 { void f(Statement s, String t) throws Exception { s.execute("SELECT * FROM msg WHERE topic='" + t + "'"); } } |||LABEL|||6
+class SQL33 { void f(Connection c, String p) throws Exception { c.prepareStatement("UPDATE inv SET qty=0 WHERE pid=" + p); } } |||LABEL|||6
+class SQL34 { void f(Statement s, String l) throws Exception { s.executeQuery(String.format("SELECT body FROM logs WHERE lvl='%s'", l)); } } |||LABEL|||6
+class SQL35 { void f(Connection c, String n) throws Exception { c.prepareStatement("SELECT * FROM cat WHERE name='" + n + "'"); } } |||LABEL|||6
+class SQL36 { void f(Statement s, String u) throws Exception { s.execute("SELECT email FROM users WHERE uid=" + u); } } |||LABEL|||6
+class SQL37 { void f(Connection c, String g) throws Exception { c.prepareStatement("SELECT * FROM grp WHERE gid=" + g); } } |||LABEL|||6
+class SQL38 { void f(Statement s, String i) throws Exception { s.executeQuery(String.format("SELECT url FROM links WHERE id=%s", i)); } } |||LABEL|||6
+class SQL39 { void f(Connection c, String m) throws Exception { c.prepareStatement("DELETE FROM mail WHERE mid='" + m + "'"); } } |||LABEL|||6
+class SQL40 { void f(Statement s, String n) throws Exception { s.execute("SELECT val FROM props WHERE key='" + n + "'"); } } |||LABEL|||6
+
+// Группа 3: LDAP и XPath Injections (22 вариации)
+class LDAP1 { void f(DirContext d, String u) throws Exception { d.search("dc=u", "(uid=" + u + ")", null); } } |||LABEL|||6
+class LDAP2 { void f(DirContext d, String g) throws Exception { d.search("ou=g", "(cn=" + g + ")", new SearchControls()); } } |||LABEL|||6
+class LDAP3 { void f(DirContext d, String m) throws Exception { d.search("o=c", "(mail=" + m + ")", null); } } |||LABEL|||6
+class LDAP4 { void f(DirContext d, String p) throws Exception { String f = "(phone=" + p + ")"; d.search("dc=p", f, null); } } |||LABEL|||6
+class LDAP5 { void f(DirContext d, String l) throws Exception { d.search("ou=a", "(loc=" + l + ")", null); } } |||LABEL|||6
+class XP1 { void f(XPath x, Object o, String n) throws Exception { x.evaluate("//u[n='" + n + "']", o); } } |||LABEL|||6
+class XP2 { void f(XPath x, Document d, String i) throws Exception { x.evaluate("/data/item[@id=" + i + "]", d); } } |||LABEL|||6
+class XP3 { void f(XPath x, Object o, String t) throws Exception { x.evaluate("//book/title[text()='" + t + "']", o); } } |||LABEL|||6
+class XP4 { void f(XPath x, Document d, String c) throws Exception { x.evaluate("//cat[@name='" + c + "']", d); } } |||LABEL|||6
+class XP5 { void f(XPath x, Object o, String p) throws Exception { x.evaluate("//price[. > " + p + "]", o); } } |||LABEL|||6
+class LDAP6 { void f(DirContext d, String s) throws Exception { d.search("dc=x", "(sn=" + s + ")", null); } } |||LABEL|||6
+class LDAP7 { void f(DirContext d, String i) throws Exception { d.search("dc=x", "(id=" + i + ")", null); } } |||LABEL|||6
+class LDAP8 { void f(DirContext d, String n) throws Exception { String s = "(name=" + n + ")"; d.search("dc=x", s, null); } } |||LABEL|||6
+class LDAP9 { void f(DirContext d, String u) throws Exception { d.search("dc=x", "(user=" + u + ")", null); } } |||LABEL|||6
+class LDAP10 { void f(DirContext d, String a) throws Exception { d.search("dc=x", "(addr=" + a + ")", null); } } |||LABEL|||6
+class XP6 { void f(XPath x, Object o, String s) throws Exception { x.evaluate("//staff[sn='" + s + "']", o); } } |||LABEL|||6
+class XP7 { void f(XPath x, Object o, String d) throws Exception { x.evaluate("//doc[@date='" + d + "']", o); } } |||LABEL|||6
+class XP8 { void f(XPath x, Object o, String l) throws Exception { x.evaluate("//log[@lvl='" + l + "']", o); } } |||LABEL|||6
+class XP9 { void f(XPath x, Object o, String i) throws Exception { x.evaluate("//img[@id=" + i + "]", o); } } |||LABEL|||6
+class XP10 { void f(XPath x, Object o, String t) throws Exception { x.evaluate("//msg[topic='" + t + "']", o); } } |||LABEL|||6
+class SQL41 { void f(Connection c, String u) throws Exception { c.createStatement().execute("SELECT * FROM u WHERE n='" + u + "'"); } } |||LABEL|||6
+class XP11 { void f(XPath x, Object o, String v) throws Exception { x.evaluate("//val[.=" + v + "]", o); } } |||LABEL|||6
+
+
+// класс 7
+
+
+// Группа 1: Устаревшие даты и форматирование (15 примеров)
+class Old1 { void f() { Date d = new Date(); d.getYear(); } } |||LABEL|||7
+class Old2 { void f() { new Date(123, 5, 24); } } |||LABEL|||7
+class Old3 { void f(Date d) { d.getHours(); } } |||LABEL|||7
+class Old4 { void f(Date d) { d.getMinutes(); } } |||LABEL|||7
+class Old5 { void f(Date d) { d.getSeconds(); } } |||LABEL|||7
+class Old6 { void f() { new SimpleDateFormat("yyyy-MM-dd"); } } |||LABEL|||7
+class Old7 { void f() { Calendar.getInstance().getTime(); } } |||LABEL|||7
+class Old8 { void f(Date d) { d.getDay(); } } |||LABEL|||7
+class Old9 { void f() { Date.parse("2025-01-01"); } } |||LABEL|||7
+class Old10 { void f() { Date.UTC(1,1,1,1,1,1); } } |||LABEL|||7
+class Old11 { void f(Date d, int v) { d.setYear(v); } } |||LABEL|||7
+class Old12 { void f(Date d, int v) { d.setHours(v); } } |||LABEL|||7
+class Old13 { void f(Date d, int v) { d.setMinutes(v); } } |||LABEL|||7
+class Old14 { void f(Date d, int v) { d.setMonth(v); } } |||LABEL|||7
+class Old15 { void f() { new java.sql.Time(1,1,1).getHours(); } } |||LABEL|||7
+
+// Группа 2: Устаревшие коллекции и обертки (15 примеров)
+class Coll1 { void f() { Vector v = new Vector(); v.add(1); } } |||LABEL|||7
+class Coll2 { void f() { Hashtable h = new Hashtable(); h.put(1,1); } } |||LABEL|||7
+class Coll3 { void f() { Stack s = new Stack(); s.push(1); } } |||LABEL|||7
+class Coll4 { void f() { Dictionary d = new Hashtable(); } } |||LABEL|||7
+class Wrap1 { void f() { Integer i = new Integer(10); } } |||LABEL|||7
+class Wrap2 { void f() { Double d = new Double(1.1); } } |||LABEL|||7
+class Wrap3 { void f() { Boolean b = new Boolean("true"); } } |||LABEL|||7
+class Wrap4 { void f() { Long l = new Long(100L); } } |||LABEL|||7
+class Wrap5 { void f() { Float f = new Float(1.0f); } } |||LABEL|||7
+class Wrap6 { void f() { Byte b = new Byte((byte)1); } } |||LABEL|||7
+class Wrap7 { void f() { Short s = new Short((short)1); } } |||LABEL|||7
+class Wrap8 { void f() { Character c = new Character('a'); } } |||LABEL|||7
+class Coll5 { void f(Vector v) { v.elements(); } } |||LABEL|||7
+class Coll6 { void f(Hashtable h) { h.elements(); } } |||LABEL|||7
+class Coll7 { void f() { Enumeration e = new Vector().elements(); } } |||LABEL|||7
+
+// Группа 3: Потоки, Криптография и Рефлексия (17 примеров)
+class Thr1 { void f(Thread t) { t.stop(); } } |||LABEL|||7
+class Thr2 { void f(Thread t) { t.suspend(); } } |||LABEL|||7
+class Thr3 { void f(Thread t) { t.resume(); } } |||LABEL|||7
+class Cry1 { void f() throws Exception { MessageDigest.getInstance("MD5"); } } |||LABEL|||7
+class Cry2 { void f() throws Exception { MessageDigest.getInstance("SHA-1"); } } |||LABEL|||7
+class Cry3 { void f() throws Exception { Cipher.getInstance("DES"); } } |||LABEL|||7
+class Ref1 { void f(Class c) throws Exception { c.newInstance(); } } |||LABEL|||7
+class Sys1 { void f() { System.runFinalizersOnExit(true); } } |||LABEL|||7
+class Sys2 { void f() { Runtime.runFinalizersOnExit(true); } } |||LABEL|||7
+class Awt1 { void f(Component c) { c.show(); } } |||LABEL|||7
+class Awt2 { void f(Component c) { c.hide(); } } |||LABEL|||7
+class Awt3 { void f(Component c) { c.disable(); } } |||LABEL|||7
+class Awt4 { void f(Frame f) { f.show(); } } |||LABEL|||7
+class Net1 { void f() throws Exception { new URL("").openConnection().getInputStream().readLine(); } } |||LABEL|||7
+class Thr4 { void f() { Thread.currentThread().countStackFrames(); } } |||LABEL|||7
+class Cry4 { void f() throws Exception { KeyGenerator.getInstance("DES"); } } |||LABEL|||7
+class Ref2 { void f(ObjectStreamClass o) { o.getClass().newInstance(); } } |||LABEL|||7
+
+
+// класс 5:
+
+
+// Группа 1: Выполнение системных команд (Runtime.exec) - 15 вариаций
+class Rce1 { void f(String c) throws Exception { Runtime.getRuntime().exec(c); } } |||LABEL|||5
+class Rce2 { void f(String[] c) throws Exception { Runtime.getRuntime().exec(c); } } |||LABEL|||5
+class Rce3 { void f(String c) throws Exception { Runtime.getRuntime().exec(new String[]{"sh", "-c", c}); } } |||LABEL|||5
+class Rce4 { void f(String c) throws Exception { Runtime r = Runtime.getRuntime(); r.exec(c); } } |||LABEL|||5
+class Rce5 { void f(String c) throws Exception { Runtime.getRuntime().exec(c, null); } } |||LABEL|||5
+class Rce6 { void f(String c) throws Exception { Runtime.getRuntime().exec(c, null, null); } } |||LABEL|||5
+class Rce7 { void run(String cmd) throws Exception { Runtime.getRuntime().exec(cmd); } } |||LABEL|||5
+class Rce8 { void cmd(String s) throws Exception { Runtime.getRuntime().exec(s); } } |||LABEL|||5
+class Rce9 { void exec(String p) throws Exception { Runtime.getRuntime().exec(p); } } |||LABEL|||5
+class Rce10 { void os(String c) throws Exception { Runtime.getRuntime().exec(new String[]{"cmd.exe", "/c", c}); } } |||LABEL|||5
+class Rce11 { void sh(String c) throws Exception { Runtime.getRuntime().exec("/bin/sh " + c); } } |||LABEL|||5
+class Rce12 { void p(String s) throws Exception { Runtime.getRuntime().exec(System.getProperty(s)); } } |||LABEL|||5
+class Rce13 { void sys(String c) throws Exception { Runtime.getRuntime().exec(c).waitFor(); } } |||LABEL|||5
+class Rce14 { void call(String c) throws Exception { Runtime.getRuntime().exec(c).getInputStream(); } } |||LABEL|||5
+class Rce15 { void run(String c) throws Exception { Runtime.getRuntime().exec(c).destroy(); } } |||LABEL|||5
+
+// Группа 2: ProcessBuilder - 10 вариаций
+class Pb1 { void f(String c) throws Exception { new ProcessBuilder(c).start(); } } |||LABEL|||5
+class Pb2 { void f(String[] c) throws Exception { new ProcessBuilder(c).start(); } } |||LABEL|||5
+class Pb3 { void f(List<String> c) throws Exception { new ProcessBuilder(c).start(); } } |||LABEL|||5
+class Pb4 { void f(String c) throws Exception { ProcessBuilder p = new ProcessBuilder(c); p.start(); } } |||LABEL|||5
+class Pb5 { void f(String c) throws Exception { new ProcessBuilder().command(c).start(); } } |||LABEL|||5
+class Pb6 { void f(String c) throws Exception { new ProcessBuilder(c).inheritIO().start(); } } |||LABEL|||5
+class Pb7 { void f(String c) throws Exception { new ProcessBuilder(c).redirectErrorStream(true).start(); } } |||LABEL|||5
+class Pb8 { void run(String c) throws Exception { new ProcessBuilder("bash", "-c", c).start(); } } |||LABEL|||5
+class Pb9 { void cmd(String c) throws Exception { new ProcessBuilder().command("sh", "-c", c).start(); } } |||LABEL|||5
+class Pb10 { void go(String c) throws Exception { new ProcessBuilder(c.split(" ")).start(); } } |||LABEL|||5
+
+// Группа 3: Небезопасная десериализация - 10 вариаций
+class Des1 { void f(InputStream i) throws Exception { new ObjectInputStream(i).readObject(); } } |||LABEL|||5
+class Des2 { void f(byte[] b) throws Exception { new ObjectInputStream(new ByteArrayInputStream(b)).readObject(); } } |||LABEL|||5
+class Des3 { void f(InputStream i) throws Exception { ObjectInputStream o = new ObjectInputStream(i); o.readObject(); } } |||LABEL|||5
+class Des4 { void f(Socket s) throws Exception { new ObjectInputStream(s.getInputStream()).readObject(); } } |||LABEL|||5
+class Des5 { void load(InputStream s) throws Exception { Object o = new ObjectInputStream(s).readObject(); } } |||LABEL|||5
+class Des6 { void msg(InputStream i) throws Exception { ObjectInputStream s = new ObjectInputStream(i); s.readUnshared(); } } |||LABEL|||5
+class Des7 { void read(InputStream i) throws Exception { new ObjectInputStream(i).readUnshared(); } } |||LABEL|||5
+class Des8 { void get(InputStream i) throws Exception { ObjectInputStream ois = new ObjectInputStream(i); ois.readObject(); } } |||LABEL|||5
+class Des9 { void parse(InputStream i) throws Exception { new ObjectInputStream(i).readObject(); } } |||LABEL|||5
+class Des10 { void data(InputStream i) throws Exception { new ObjectInputStream(i).readObject(); } } |||LABEL|||5
+
+// Группа 4: ScriptEngine, JNDI и Рефлексия - 8 вариаций
+class Scr1 { void f(String s) throws Exception { new ScriptEngineManager().getEngineByName("js").eval(s); } } |||LABEL|||5
+class Scr2 { void f(String s) throws Exception { new ScriptEngineManager().getEngineByExtension("js").eval(s); } } |||LABEL|||5
+class Jndi1 { void f(String n) throws Exception { new InitialContext().lookup(n); } } |||LABEL|||5
+class Jndi2 { void f(String n) throws Exception { Context c = new InitialContext(); c.lookup(n); } } |||LABEL|||5
+class Ref1 { void f(String c) throws Exception { Class.forName(c).newInstance(); } } |||LABEL|||5
+class Ref2 { void f(String c) throws Exception { Class.forName(c).getDeclaredConstructor().newInstance(); } } |||LABEL|||5
+class Ref3 { void f(String c, String m) throws Exception { Class.forName(c).getMethod(m).invoke(null); } } |||LABEL|||5
+class Scr3 { void run(String c) throws Exception { new ScriptEngineManager().getEngineByMimeType("text/javascript").eval(c); } } |||LABEL|||5

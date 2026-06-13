@@ -1,0 +1,31 @@
+// Класс 0: Чистый код
+void safe1(){int x=1;}|||LABEL|||0
+void safe2(){return;}|||LABEL|||0
+
+// Класс 1: Утечка (File)
+void leak1(){new FileReader("a");}|||LABEL|||1
+void leak2(){new FileInputStream("b");}|||LABEL|||1
+
+// Класс 2: Catch
+void catch1(){try{}catch(Exception e){}}|||LABEL|||2
+void catch2(){try{}catch(Throwable t){}}|||LABEL|||2
+
+// Класс 3: XML
+void xml1(){DocumentBuilderFactory.newInstance();}|||LABEL|||3
+void xml2(){SAXParserFactory.newInstance();}|||LABEL|||3
+
+// Класс 4: NPE
+void npe1(String s){s.length();}|||LABEL|||4
+void npe2(Object o){o.hashCode();}|||LABEL|||4
+
+// Класс 5: RCE
+void rce1(){Runtime.getRuntime().exec("a");}|||LABEL|||5
+void rce2(){new ProcessBuilder("b");}|||LABEL|||5
+
+// Класс 6: SQL
+void sql1(String s){"select "+s;}|||LABEL|||6
+void sql2(String s){"where id="+s;}|||LABEL|||6
+
+// Класс 7: Deprecated
+void old1(){new Date().getYear();}|||LABEL|||7
+void old2(){new Integer(10);}|||LABEL|||7

@@ -1,0 +1,49 @@
+@startuml
+title ЭТАП 3: Арбитраж и сохранение (Синергия AI + Sonar)
+
+skinparam sequenceMessageAlign center
+
+participant "MainParser" as Main
+participant "MistralArbitrator" as AIArb
+participant "Stage3SonarVerifier" as Sonar
+participant "SonarArbitrator" as FinalArb
+database "final_training_dataset.txt" as DB
+
+Main -> AIArb : getAnalysis(verdicts)\nline:74\n(List<LLMVerdict> verdicts)
+activate AIArb
+AIArb -> AIArb : calculateWeight(head, class, conf)\nline:55\n(Internal math)
+note right: Приоритет H2_Architect\nна SAFE (x1.5)
+AIArb --> Main : (AIResult object: rankedClasses, weights)\n(Return ranked scores)
+deactivate AIArb
+
+Main -> Sonar : analyze(candidate)\nline:77\n(CodeCandidate candidate)
+activate Sonar
+Sonar -> Sonar : matchAstRules(cu)\nline:23\n(Check S3649, S2095, etc.)
+Sonar --> Main : (SonarVerdict object: class, ruleName)\n(Return formal finding)
+deactivate Sonar
+
+Main -> FinalArb : determineFinalLabel(aiResult, sonarVerdict)\nline:80\n(AIResult ai, SonarVerdict sonar)
+activate FinalArb
+
+alt [СИНЕРГИЯ] SonarClass входит в AI Top-2 и имеет вес > 0.8
+    FinalArb -> FinalArb : return SonarClass
+else [ВЕТО] AI Winner=0 и SafeWeight > 1.2
+    FinalArb -> FinalArb : return 0 (SAFE)
+else [ОТКРЫТИЕ] Sonar=0 и AI Winner уверен на > 3.2
+    FinalArb -> FinalArb : return AiWinner
+else [КОНФЛИКТ] Мнения разошлись без весомых доказательств
+    FinalArb -> FinalArb : return -1 (SKIP)
+end
+
+FinalArb --> Main : (ArbitrationResult: label, status)\n(Return final decision)
+deactivate FinalArb
+
+alt Если label != -1 (Пример прошел фильтры)
+    Main -> Main : saveToDataset(candidate)\nline:140\n(Candidate with final label)
+    Main -> DB : Append: code + "|||LABEL|||" + label\nline:145\n(Physical Write)
+    Main -> Main : saveCheckpoint(index)\nline:153\n(Update checkpoint.txt)
+else Если label == -1
+    Main -> Main : System.out.println("SKIP...")
+end
+
+@enduml

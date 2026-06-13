@@ -1,0 +1,38 @@
+@startuml
+title ЭТАП 2: Параллельная классификация (Ансамбль ИИ)
+
+skinparam sequenceMessageAlign center
+skinparam noteTextAlignment left
+
+participant "MainParser" as Main
+participant "Stage2ClassificationManager" as Manager
+participant "Stage2MistralClient" as Client
+participant "Mistral AI API" as API
+
+Main -> Manager : classify(candidate)\nline:73\n(CodeCandidate object)
+activate Manager
+
+loop Для каждой из 7 голов (H1..H7)
+    Manager -> Client : sendRequest(context, role, headName)\nline:26\n(String context, String role, String head)
+    activate Client
+
+    Client -> Client : buildSystemPrompt(role + description)\nline:28\n(Internal logic)
+
+    Client -> API : HTTP POST /chat/completions\nline:47\n(JSON: model, messages, format, temp)
+    note right: Код: "db.execute(sql)"\nИнструкция: "Верни JSON"
+
+    API --> Client : HTTP 200 Response\n(JSON: choices[0].message.content)
+
+    Client -> Client : parseResponse(body)\nline:68\n(Returns LLMVerdict)
+
+    Client --> Manager : (LLMVerdict object: class, confidence, head)\n(Return result)
+    deactivate Client
+end
+
+Manager -> Manager : CompletableFuture.join()\nline:33\n(Synchronize 7 threads)
+
+Manager --> Main : (List<LLMVerdict>)\n(Return all verdicts)
+deactivate Manager
+
+note over Main, DB : Далее данные передаются в MistralArbitrator\nдля взвешенного голосования
+@enduml

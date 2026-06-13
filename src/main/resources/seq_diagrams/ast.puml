@@ -1,0 +1,38 @@
+@startuml
+title ЭТАП 1: Извлечение функций через AST (JavaParser)
+
+actor "MainParser" as Main
+participant "GenericJavaLoader" as Loader
+participant "Stage1AstExtractor" as AST
+database "Java File (Disk)" as File
+participant "JavaParser Library" as JP
+
+Main -> Loader : load()
+Loader -> File : Read content (String)
+Loader -> Loader : hasDangerousPattern(content)
+note right: Быстрый Regex-фильтр (sql, exec, stream...)
+
+alt Если файл "подозрительный"
+    Loader -> AST : extractCandidates(content, source, path)
+    AST -> JP : StaticJavaParser.parse(content)
+    JP --> AST : CompilationUnit (CU)
+
+    loop Для каждого MethodDeclaration в CU
+        AST -> AST : isMethodWorthAnalyzing(method)
+        note right: Пропуск геттеров/сеттеров\nПоиск маркеров (SQL, RCE) в узлах
+
+        AST -> AST : buildSmartContext(cu, method)
+        group Логика "Умного контекста"
+            AST -> JP : cu.getImports()
+            note right: Фильтр: только те, что упомянуты в теле метода
+            AST -> JP : method.findAncestor(Class)
+            AST -> JP : clazz.getFields()
+            note right: Фильтр: только поля, используемые в методе\n(например, private Connection db;)
+        end
+
+        AST --> Loader : List<CodeCandidate>
+    end
+end
+
+Loader --> Main : "Золотой" список функций с контекстом
+@enduml

@@ -1,0 +1,10 @@
+services:
+  java-parser:
+    build: .
+    env_file:
+      - .env  # Docker автоматически подтянет ключи из файла
+    volumes:
+      - ./datasets:/app/datasets
+      - ./checkpoint.txt:/app/checkpoint.txt
+      - ./final_training_dataset.txt:/app/final_training_dataset.txt
+    restart: always

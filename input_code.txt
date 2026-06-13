@@ -1,0 +1,17 @@
+class MyDatabaseHelper {
+    private Connection conn;
+
+    public void executeRaw(String sql) throws SQLException {
+        conn.createStatement().execute(sql);
+    }
+}
+
+public class UserService {
+    private MyDatabaseHelper db;
+
+    public void updateUserInfo(String userId, String bio) throws SQLException {
+
+        String command = "UPDATE profiles SET bio = '" + bio + "' WHERE id = " + userId;
+        db.executeRaw(command);
+    }
+}
