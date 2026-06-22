@@ -292,19 +292,21 @@ public class JulietLoader {
             // Извлечение контекста класса
             String classContext = extractClassContext(content);
 
-            // 1. поиск всех bad-методов (обычно один, но на всякий случай)
+            // 1. Находим ВСЕ bad-методы
             List<String> badMethods = findAllMethodsByPrefix(content, "bad");
             for (String badMethod : badMethods) {
-                String fullContext = classContext + "\n" + badMethod;
+                // ДОБАВЛЯЕМ "\n}" в конце, чтобы закрыть класс!
+                String fullContext = classContext + "\n" + badMethod + "\n}";
                 candidates.add(createCandidate(cweName, classId, "bad",
                         fullContext, badMethod, file.toString()));
                 badMethodsFound++;
             }
 
-            // 2. поиск всех good-методов (good, goodG2B, goodG2B1, goodB2G, goodB2G1...)
+            // 2. Находим ВСЕ good-методы
             List<String> goodMethods = findAllMethodsByPrefix(content, "good");
             for (String goodMethod : goodMethods) {
-                String fullContext = classContext + "\n" + goodMethod;
+                // ДОБАВЛЯЕМ "\n}" в конце, чтобы закрыть класс!
+                String fullContext = classContext + "\n" + goodMethod + "\n}";
                 candidates.add(createCandidate(cweName, 0, "good",
                         fullContext, goodMethod, file.toString()));
                 goodMethodsFound++;

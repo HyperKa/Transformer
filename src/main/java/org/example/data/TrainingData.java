@@ -154,14 +154,25 @@ public class TrainingData {
     public List<String> getCodeSnippets() { return this.codeSnippets; }
 
     public static List<String> tokenizeCode(String codeBlock) {
-        String noBlockComments = codeBlock.replaceAll("(?s)/\\*.*?\\*/", "");
-        String noComments = noBlockComments.replaceAll("//.*", "");
-        List<String> tokens = new ArrayList<>();
-        String[] cleanCode = noComments.split("\\s+|(?<=[{}();,.])|(?=[{}();,.])|\"");
+        // Удаление блочных комментариев
+        String clean = codeBlock.replaceAll("(?s)/\\*.*?\\*/", "");
+        // Удаление однострочных комментариев
+        clean = clean.replaceAll("//.*", "");
 
-        for (String token : cleanCode) {
-            if (!token.isEmpty()) {
-                tokens.add(token);
+        // Добавление пробелов вокруг спецсимволов
+        String symbols = "{}()[]:;,.\\\"'=+-*/?!<>";
+        for (int i = 0; i < symbols.length(); i++) {
+            char symbol = symbols.charAt(i);
+            clean = clean.replace(String.valueOf(symbol), " " + symbol + " ");
+        }
+
+        // Разделение по пробелам
+        List<String> tokens = new java.util.ArrayList<>();
+        String[] split = clean.split("\\s+");
+        for (String t : split) {
+            String trimmed = t.trim();
+            if (!trimmed.isEmpty()) {
+                tokens.add(trimmed);
             }
         }
         return tokens;

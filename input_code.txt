@@ -1,17 +1,12 @@
-class MyDatabaseHelper {
-    private Connection conn;
-
-    public void executeRaw(String sql) throws SQLException {
-        conn.createStatement().execute(sql);
-    }
-}
-
-public class UserService {
-    private MyDatabaseHelper db;
-
-    public void updateUserInfo(String userId, String bio) throws SQLException {
-
-        String command = "UPDATE profiles SET bio = '" + bio + "' WHERE id = " + userId;
-        db.executeRaw(command);
+@Component
+public class PaymentGatewayConnector {
+    public TransactionResult authorize(PaymentDetails details) {
+        try {
+            return apiCall(details);
+        } catch (PaymentException e) {
+            Object stubValue = null;
+            log.warn("API call failed, placeholder used: " + stubValue);
+        }
+        return new TransactionResult("FAILED");
     }
 }

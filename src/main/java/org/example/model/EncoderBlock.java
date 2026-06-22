@@ -17,9 +17,9 @@ public class EncoderBlock implements ParameterContainer, Serializable {
 
     public EncoderBlock(int numHeads, int embeddingDim, int hiddenDim) throws IllegalAccessException {
         this.mhaObject = new MultiHeadAttention(embeddingDim, numHeads);
-        this.norm1 = new LayerNormalization(embeddingDim, 1e-6);
+        this.norm1 = new LayerNormalization(embeddingDim, 1e-5);
         this.network = new FeedForwardNetwork(embeddingDim, hiddenDim);
-        this.norm2 = new LayerNormalization(embeddingDim, 1e-6);
+        this.norm2 = new LayerNormalization(embeddingDim, 1e-5);
     }
 
     public ForwardResult forward(INDArray input, int[] attentionMask) {
@@ -75,6 +75,11 @@ public class EncoderBlock implements ParameterContainer, Serializable {
         // 7. Итоговый градиент по входу
         return grad_input_from_add.addi(grad_input_from_mha);
     }
+
+    public MultiHeadAttention getMha() { return mhaObject; }
+    public LayerNormalization getNorm1() { return norm1; }
+    public FeedForwardNetwork getNetwork() { return network; }
+    public LayerNormalization getNorm2() { return norm2; }
 
     @Override
     public List<INDArray> getParameters() {

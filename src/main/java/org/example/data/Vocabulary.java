@@ -1,5 +1,7 @@
 package org.example.data;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.data.ConfigConstants;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
 import java.util.*;
@@ -152,7 +154,37 @@ public class Vocabulary implements Serializable {
         }
     }
 
+
+    public static Vocabulary loadFromJson(String jsonPath) throws IOException {
+        System.out.println("Импорт словаря из JSON: " + jsonPath);
+
+        // UTF_8 для предотвращения багов с Windows-1251
+        String content = java.nio.file.Files.readString(
+                java.nio.file.Paths.get(jsonPath),
+                java.nio.charset.StandardCharsets.UTF_8
+        );
+
+        org.json.JSONObject json = new org.json.JSONObject(content);
+        org.json.JSONObject wordToIndexJson = json.getJSONObject("wordToIndex");
+
+        Vocabulary vocab = new Vocabulary(new java.util.ArrayList<>());
+        vocab.wordToIndex.clear();
+        vocab.indexToWord.clear();
+
+        java.util.Iterator<String> keys = wordToIndexJson.keys();
+        while (keys.hasNext()) {
+            String token = keys.next();
+            int index = wordToIndexJson.getInt(token);
+            vocab.addToken(token, index);
+        }
+
+        System.out.println("Словарь успешно импортирован. Размер словаря: " + vocab.getDictionarySize());
+        return vocab;
+    }
+
     public int getDictionarySize() {
         return wordToIndex.size();
     }
+
+
 }

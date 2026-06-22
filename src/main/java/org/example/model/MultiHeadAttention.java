@@ -1,16 +1,23 @@
 package org.example.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.example.repo.ParameterContainer;
+
+import java.io.Serializable;
 import java.util.*;
 
-public class MultiHeadAttention implements ParameterContainer {
+public class MultiHeadAttention implements ParameterContainer, Serializable {
     private int embeddingDim;
     private int numHeads;
+    @Getter
     private List<SelfAttention> heads;
-    private INDArray Wo, dWo;
+    @Setter
+    private INDArray Wo;
+    private INDArray dWo;
 
     public MultiHeadAttention(int embeddingDim, int numHeads) {
         this.embeddingDim = embeddingDim;

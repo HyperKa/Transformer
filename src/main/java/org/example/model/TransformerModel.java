@@ -76,6 +76,10 @@ public class TransformerModel implements ParameterContainer, Serializable {
         }
     }
 
+    public EmbeddingTable getEmbeddingTable() { return embeddingTable; }
+    public List<EncoderBlock> getEncoderBlocks() { return encoderBlocks; }
+    public ClassificationHead getClassificationHead() { return classificationHead; }
+
     @Override public List<INDArray> getParameters() {
         List<INDArray> p = new ArrayList<>(embeddingTable.getParameters());
         for (EncoderBlock b : encoderBlocks) p.addAll(b.getParameters());

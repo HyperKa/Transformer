@@ -41,12 +41,14 @@ public class SelfAttention implements ParameterContainer, Serializable {
         // Scores = (Q * K^T) / sqrt(headDim)
         INDArray scores = Q.mmul(K.transpose()).divi(Math.sqrt(headDim));
 
-        // Маскирование PAD токенов
+        // Маскирование PAD токенов для всех запросов в матрице
         if (attentionMask != null) {
             for (int j = 0; j < attentionMask.length; j++) {
                 if (attentionMask[j] == 0) {
-                    scores.putScalar(new int[]{0, j}, -1e9); // Упрощенно для примера
-                    // В реальном батче нужно использовать тензорную маску
+                    // весь столбец j со значением -1e9
+                    for (int i = 0; i < scores.rows(); i++) {
+                        scores.putScalar(new int[]{i, j}, -1e9);
+                    }
                 }
             }
         }
@@ -91,6 +93,12 @@ public class SelfAttention implements ParameterContainer, Serializable {
         return dQ.mmul(Wq.transpose())
                 .addi(dK.mmul(Wk.transpose()))
                 .addi(grad_output.mmul(Wv.transpose()));
+    }
+
+    public void setWeights(INDArray Wq, INDArray Wk, INDArray Wv) {
+        this.Wq = Wq;
+        this.Wk = Wk;
+        this.Wv = Wv;
     }
 
     @Override public List<INDArray> getParameters() { return List.of(Wk, Wq, Wv); }

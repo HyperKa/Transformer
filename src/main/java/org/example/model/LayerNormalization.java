@@ -4,9 +4,11 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import org.example.repo.ParameterContainer;
+
+import java.io.Serializable;
 import java.util.*;
 
-public class LayerNormalization implements ParameterContainer {
+public class LayerNormalization implements ParameterContainer, Serializable {
     private INDArray gamma, beta;
     private INDArray dGamma, dBeta;
     private double epsilon;
@@ -66,6 +68,11 @@ public class LayerNormalization implements ParameterContainer {
                 .add(dmean.div(N));
 
         return dx;
+    }
+
+    public void setParams(INDArray gamma, INDArray beta) {
+        this.gamma = gamma;
+        this.beta = beta;
     }
 
     @Override public List<INDArray> getParameters() { return List.of(gamma, beta); }

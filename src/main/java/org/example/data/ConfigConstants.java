@@ -3,20 +3,20 @@ package org.example.data;
 public class ConfigConstants {
     // ОСНОВНАЯ СБОРКА
 
-    public static final int NUM_LAYERS = 3;
-    public static final int NUM_HEADS = 2;
-    public static final int EMBEDDING_DIM = 64;
-    public static final int FFN_HIDDEN_DIM = 256; // 64 * 4
+    public static final int NUM_LAYERS = 6;
+    public static final int NUM_HEADS = 8;
+    public static final int EMBEDDING_DIM = 256;
+    public static final int FFN_HIDDEN_DIM = 1024; // 64 * 4
     public static final int NUM_CLASSES = 8;
 
-    public static final double LEARNING_RATE = 0.0005;
-    public static final int EPOCHS = 50;
+    public static final double LEARNING_RATE = 0.0001;
+    public static final int EPOCHS = 30;
 
     // public static final double LEARNING_RATE = 0.001;
     // public static final int EPOCHS = 100;
 
     // Максимальная длина последовательности:
-    public static final int MAX_LENGTH = 150;
+    public static final int MAX_LENGTH = 512;
     // ПРИ ИМПОРТЕ УКАЗАТЬ КОРРЕКТНЫЙ ПУТЬ ПАПКИ ПРОЕКТА ДЛЯ КОРРЕКТНОГО СОЗДАНИЯ БАЙТ КОДА В КОРНЕ ПРОЕКТА C:/Users/VivoBook-15/Documents/Java/transformer!!!
     public static final String MODEL_SAVE_PATH = "transformer_model.ser";
     public static final String VOCAB_SAVE_PATH = "vocabulary.ser";

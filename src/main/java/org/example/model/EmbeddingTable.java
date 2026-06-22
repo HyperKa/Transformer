@@ -1,5 +1,6 @@
 package org.example.model;
 
+import lombok.Setter;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
@@ -10,6 +11,7 @@ import java.util.*;
 public class EmbeddingTable implements ParameterContainer, Serializable {
     private int size;
     private int embeddingDim;
+    @Setter
     private INDArray table;
     private INDArray dTable;
 

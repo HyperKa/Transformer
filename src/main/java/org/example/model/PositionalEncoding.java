@@ -20,7 +20,6 @@ public class PositionalEncoding implements Serializable {
 
     public INDArray addPositionalEncoding(INDArray input) {
         int len = (int) input.size(0);
-        // Извлекаем нужный фрагмент и прибавляем к входу
         return input.add(peMatrix.get(org.nd4j.linalg.indexing.NDArrayIndex.interval(0, len)));
     }
 }

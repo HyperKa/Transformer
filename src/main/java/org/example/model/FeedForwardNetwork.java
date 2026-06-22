@@ -59,6 +59,13 @@ public class FeedForwardNetwork implements ParameterContainer, Serializable {
         return dh.mmul(W1.transpose());
     }
 
+    public void setWeights(INDArray W1, INDArray b1, INDArray W2, INDArray b2) {
+        this.W1 = W1;
+        this.b1 = b1;
+        this.W2 = W2;
+        this.b2 = b2;
+    }
+
     @Override public List<INDArray> getParameters() { return List.of(W1, W2, b1, b2); }
     @Override public List<INDArray> getGradients() { return List.of(dW1, dW2, db1, db2); }
     @Override public void zeroGradients() { dW1.assign(0); dW2.assign(0); db1.assign(0); db2.assign(0); }

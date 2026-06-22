@@ -44,6 +44,11 @@ public class ClassificationHead implements ParameterContainer, Serializable {
         return grad_output.mmul(W.transpose());
     }
 
+    public void setWeights(INDArray W, INDArray b) {
+        this.W = W;
+        this.b = b;
+    }
+
     @Override public List<INDArray> getParameters() { return List.of(W, b); }
     @Override public List<INDArray> getGradients() { return List.of(dW, db); }
     @Override public void zeroGradients() { dW.assign(0); db.assign(0); }
