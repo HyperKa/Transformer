@@ -52,7 +52,7 @@ public class Stage2MistralClient {
                     return parseResponse(response.body(), headName);
                 } else if (response.statusCode() == 429) {
                     // Обработка лимитов бесплатного API
-                    long sleepTime = 5000L * (attempt + 1);
+                    long sleepTime = 20000L;
                     System.out.println(headName + ": Rate limit (429). Ждем " + (sleepTime/1000) + " сек...");
                     Thread.sleep(sleepTime);
                 } else {
