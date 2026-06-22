@@ -12,7 +12,6 @@
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Выносим версию в переменную для контроля -->
         <nd4j.version>1.0.0-M2.1</nd4j.version>
     </properties>
 
@@ -21,14 +20,14 @@
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-api</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>${nd4j.version}</version>
         </dependency>
 
         <!-- Высокопроизводительный CPU бэкенд (Нативный C++ / AVX-512) -->
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-native-platform</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>${nd4j.version}</version>
         </dependency>
 
         <!-- Логгер для вывода прогресса -->
@@ -38,13 +37,14 @@
             <version>1.7.36</version>
         </dependency>
 
-        <!-- Apache Commons можно оставить, если он еще где-то используется в коде -->
+        <!-- Apache Commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.6.1</version>
         </dependency>
 
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -52,6 +52,7 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -77,36 +78,46 @@
             <version>20240303</version>
         </dependency>
 
-        <!-- для env файлов -->
+        <!-- Для env файлов -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
             <version>3.0.0</version>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
+            <!-- Плагин Shade для сборки одного исполняемого FAT-JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.example.parser.MainParser</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <!-- Указываем главный класс парсера в качестве точки входа -->
+                                    <mainClass>org.example.parser.MainParser</mainClass>
+                                </transformer>
+                            </transformers>
+                            <!-- Фильтр для предотвращения конфликтов подписей библиотек безопасности -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

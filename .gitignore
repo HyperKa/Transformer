@@ -19,6 +19,7 @@ final_training_dataset.txt
 target/
 .idea/
 datasets/
+*.tar
 
 ### Eclipse ###
 .apt_generated

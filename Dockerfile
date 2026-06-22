@@ -1,21 +1,16 @@
-# Стейдж 1: Сборка
-FROM maven:3.9.6-eclipse-temurin-22-alpine AS build
+# Сборка проекта (используем оптимизацию под linux)
+FROM maven:3.9-eclipse-temurin-22-alpine AS build
 WORKDIR /app
 COPY pom.xml .
+RUN mvn dependency:go-offline -Djavacpp.platform=linux-x86_64
 COPY src ./src
-# Сборка проекта
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -Djavacpp.platform=linux-x86_64
 
-# Стейдж 2: Запуск
+# Запуск
 FROM eclipse-temurin:22-jre-alpine
 WORKDIR /app
+# Копируем созданный shade-плагином "толстый" jar
+COPY --from=build /app/target/*.jar ./app.jar
 
-# Копируем JAR файл.
-# Используем маску, но указываем конкретное целевое имя файла БЕЗ слэша.
-COPY --from build /app/target/*.jar ./app.jar
-
-# Создаем пустые файлы, чтобы Docker не создал папки вместо них при монтировании volumes
-RUN touch checkpoint.txt final_training_dataset.txt
-
-# Запуск с ограничением памяти
-ENTRYPOINT ["java", "-Xmx4G", "-jar", "app.jar"]
+# Запускаем напрямую через -jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
